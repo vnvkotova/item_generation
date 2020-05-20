@@ -333,7 +333,8 @@ class ExtendedTrainer(Trainer):
                     epoch_iterator.close()
                     break
 
-            list_losses.append((tr_loss - logging_loss) / self.args.logging_steps)
+            depicted_loss = (tr_loss - logging_loss) / self.args.logging_steps
+            list_losses.append(depicted_loss)
             plt.plot(list_losses, label='current loss')
             plt.legend()
             # plt.show()
