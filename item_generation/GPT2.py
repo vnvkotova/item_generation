@@ -311,8 +311,9 @@ class ExtendedTrainer(Trainer):
 
                             list_losses.append(logs["loss"])
                             plt.plot(list_losses, label='current loss')
-                            plt.legend()
-                            plt.show();
+                            # plt.legend()
+                            plt.show()
+                            plt.savefig(model_path + 'loss.png')
                             # plt.plot(list_losses, label='current loss')
                             # plt.draw()
                             # plt.clf()
