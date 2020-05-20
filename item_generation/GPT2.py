@@ -346,6 +346,7 @@ class ExtendedTrainer(Trainer):
             model.eval()
             text = "<|startoftext|>#"
             indexed_tokens = tokenizer.encode(text, return_tensors='pt')
+            indexed_tokens = indexed_tokens.to('cuda')
             # set top_k = 50 and set top_p = 0.95 and num_return_sequences = 3
             sample_outputs = model.generate(
                 indexed_tokens,
