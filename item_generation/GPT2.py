@@ -263,7 +263,7 @@ class ExtendedTrainer(Trainer):
         )
 
         list_losses = []
-        plt.ion()
+        # plt.ion()
 
         for epoch in train_iterator:
             epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=not self.is_local_master())
@@ -336,11 +336,11 @@ class ExtendedTrainer(Trainer):
             depicted_loss = (tr_loss - logging_loss) / self.args.logging_steps
             list_losses.append(depicted_loss)
             plt.plot(list_losses, label='current loss')
-            plt.legend()
-            # plt.show()
+            # plt.legend()
+            plt.show()
             # plt.plot(list_losses, label='current loss')
-            plt.draw()
-            plt.clf()
+            # plt.draw()
+            # plt.clf()
 
             if 0 < self.args.max_steps < self.global_step:
                 train_iterator.close()
