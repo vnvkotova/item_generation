@@ -263,7 +263,7 @@ class ExtendedTrainer(Trainer):
         )
 
         list_losses = []
-        plt.ion()
+        # plt.ion()
 
         for epoch in train_iterator:
             epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=not self.is_local_master())
@@ -310,10 +310,15 @@ class ExtendedTrainer(Trainer):
                                 self.evaluate()
 
                             list_losses.append(logs["loss"])
-                            arr_losses = np.array(list_losses)
-                            plt.plot(arr_losses)
-                            plt.draw()
-                            plt.clf()
+                            plt.plot(list_losses, label='current loss')
+                            plt.legend()
+                            plt.show()
+                            # plt.plot(list_losses, label='current loss')
+                            # plt.draw()
+                            # plt.clf()
+
+
+                            # generating items to see how the model is doing
 
                         if self.args.save_steps > 0 and self.global_step % self.args.save_steps == 0:
                             # In all cases (even distributed/parallel), self.model is always a reference
