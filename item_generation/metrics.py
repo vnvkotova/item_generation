@@ -1,18 +1,18 @@
-from gpt_2_simple.utils import input_file_to_list
+# from gpt_2_simple.utils import input_file_to_list
 import numpy as np
 from torch import Tensor
 
 
-def db_match(list_generated, path_training_file):
-    """
-    a function to calculate how many newly generated strings match the ones from the training file
-    """
-
-    list_training = input_file_to_list(path_training_file)
-
-    overlap_count = len(list(set(list_generated) & set(list_training)))
-
-    return overlap_count/len(list_generated)
+# def db_match(list_generated, path_training_file):
+#     """
+#     a function to calculate how many newly generated strings match the ones from the training file
+#     """
+#
+#     list_training = input_file_to_list(path_training_file)
+#
+#     overlap_count = len(list(set(list_generated) & set(list_training)))
+#
+#     return overlap_count/len(list_generated)
 
 
 def accuracy(out, labels):
