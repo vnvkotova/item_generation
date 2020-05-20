@@ -343,30 +343,30 @@ class ExtendedTrainer(Trainer):
             # plt.clf()
 
             # Todo generating items to see how the model is doing
-            model.eval()
-            text = "<|startoftext|>#"
-            indexed_tokens = tokenizer.encode(text, return_tensors='pt')
-            # set top_k = 50 and set top_p = 0.95 and num_return_sequences = 3
-            sample_outputs = model.generate(
-                indexed_tokens,
-                do_sample=True,
-                max_length=50,
-                top_k=50,
-                top_p=0.95,
-                num_return_sequences=4
-            )
-
-            print("Output:\n" + 100 * '-')
-            for i, sample_output in enumerate(sample_outputs):
-                print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
-            model.train()
-
-            if 0 < self.args.max_steps < self.global_step:
-                train_iterator.close()
-                break
-            if self.args.tpu_metrics_debug:
-                # tpu-comment: Logging debug metrics for PyTorch/XLA (compile, execute times, ops, etc.)
-                xm.master_print(met.metrics_report())
+            # model.eval()
+            # text = "<|startoftext|>#"
+            # indexed_tokens = tokenizer.encode(text, return_tensors='pt')
+            # # set top_k = 50 and set top_p = 0.95 and num_return_sequences = 3
+            # sample_outputs = model.generate(
+            #     indexed_tokens,
+            #     do_sample=True,
+            #     max_length=50,
+            #     top_k=50,
+            #     top_p=0.95,
+            #     num_return_sequences=4
+            # )
+            #
+            # print("Output:\n" + 100 * '-')
+            # for i, sample_output in enumerate(sample_outputs):
+            #     print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
+            # model.train()
+            #
+            # if 0 < self.args.max_steps < self.global_step:
+            #     train_iterator.close()
+            #     break
+            # if self.args.tpu_metrics_debug:
+            #     # tpu-comment: Logging debug metrics for PyTorch/XLA (compile, execute times, ops, etc.)
+            #     xm.master_print(met.metrics_report())
 
         if self.tb_writer:
             self.tb_writer.close()
