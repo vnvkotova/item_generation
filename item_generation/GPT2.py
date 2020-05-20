@@ -309,20 +309,7 @@ class ExtendedTrainer(Trainer):
                             if self.args.evaluate_during_training:
                                 self.evaluate()
 
-                            list_losses.append(logs["loss"])
-                            plt.plot(list_losses, label='current loss')
-                            # plt.legend()
-                            plt.show()
-                            print("Hallo!")
-                            print("Here I would like to see the plot")
-                            print(model_path + 'loss.png')
-                            plt.savefig(model_path + 'loss.png')
-                            # plt.plot(list_losses, label='current loss')
-                            # plt.draw()
-                            # plt.clf()
-
-
-                            # generating items to see how the model is doing
+                            # Todo generating items to see how the model is doing
 
                         if self.args.save_steps > 0 and self.global_step % self.args.save_steps == 0:
                             # In all cases (even distributed/parallel), self.model is always a reference
@@ -345,6 +332,19 @@ class ExtendedTrainer(Trainer):
                 if 0 < self.args.max_steps < self.global_step:
                     epoch_iterator.close()
                     break
+
+                list_losses.append((tr_loss - logging_loss) / self.args.logging_steps)
+                plt.plot(list_losses, label='current loss')
+                # plt.legend()
+                plt.show()
+                print("Hallo!")
+                print("Here I would like to see the plot")
+                print(model_path + 'loss.png')
+                plt.savefig(model_path + 'loss.png')
+                # plt.plot(list_losses, label='current loss')
+                # plt.draw()
+                # plt.clf()
+
             if 0 < self.args.max_steps < self.global_step:
                 train_iterator.close()
                 break
