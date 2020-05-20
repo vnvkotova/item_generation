@@ -332,7 +332,6 @@ class ExtendedTrainer(Trainer):
                     epoch_iterator.close()
                     break
 
-
             depicted_loss = (tr_loss - prev_loss) / self.args.logging_steps
             prev_loss = tr_loss
             list_losses.append(depicted_loss)
@@ -345,8 +344,8 @@ class ExtendedTrainer(Trainer):
 
             # Todo generating items to see how the model is doing
             model.eval()
-            text = "<|startoftext|>#I"
-            indexed_tokens = tokenizer.encode(text)
+            text = "<|startoftext|>#"
+            indexed_tokens = tokenizer.encode(text, return_tensors='pt')
             # set top_k = 50 and set top_p = 0.95 and num_return_sequences = 3
             sample_outputs = model.generate(
                 indexed_tokens,
