@@ -100,67 +100,67 @@ class ExtendedTrainer(Trainer):
     global_step: Optional[int] = None
     epoch: Optional[float] = None
 
-    def __init__(
-        self,
-        model: PreTrainedModel,
-        args: TrainingArguments,
-        data_collator: Optional[DataCollator] = None,
-        train_dataset: Optional[Dataset] = None,
-        eval_dataset: Optional[Dataset] = None,
-        compute_metrics: Optional[Callable[[EvalPrediction], Dict]] = None,
-        prediction_loss_only=False,
-        tb_writer: Optional["SummaryWriter"] = None,
-        optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = None,
-    ):
-        """
-        Trainer is a simple but feature-complete training and eval loop for PyTorch,
-        optimized for Transformers.
-        Args:
-            prediction_loss_only:
-                (Optional) in evaluation and prediction, only return the loss
-        """
-        super().__init__(model, args, data_collator, train_dataset, eval_dataset, compute_metrics,
-                         prediction_loss_only, tb_writer, optimizers)
-
-    def get_train_dataloader(self):
-        super().get_train_dataloader()
-
-    def get_eval_dataloader(self, eval_dataset: Optional[Dataset] = None):
-        super().get_eval_dataloader(eval_dataset)
-
-    def get_test_dataloader(self, test_dataset: Dataset):
-        super().get_test_dataloader(test_dataset)
-
-    def get_optimizers(self, num_training_steps: int):
-        """
-        Setup the optimizer and the learning rate scheduler.
-        We provide a reasonable default that works well.
-        If you want to use something else, you can pass a tuple in the Trainer's init,
-        or override this method in a subclass.
-        """
-        super().get_optimizers(num_training_steps)
-
-    def _setup_wandb(self):
-        """
-        Setup the optional Weights & Biases (`wandb`) integration.
-        One can override this method to customize the setup if needed.  Find more information at https://docs.wandb.com/huggingface
-        You can also override the following environment variables:
-        Environment:
-            WANDB_WATCH:
-                (Optional, ["gradients", "all", "false"]) "gradients" by default, set to "false" to disable gradient logging
-                or "all" to log gradients and parameters
-            WANDB_PROJECT:
-                (Optional): str - "huggingface" by default, set this to a custom string to store results in a different project
-            WANDB_DISABLED:
-                (Optional): boolean - defaults to false, set to "true" to disable wandb entirely
-        """
-        super()._setup_wandb()
-
-    def num_examples(self, dataloader):
-        """
-        Helper to get num of examples from a DataLoader, by accessing its Dataset.
-        """
-        super().num_examples(dataloader)
+    # def __init__(
+    #     self,
+    #     model: PreTrainedModel,
+    #     args: TrainingArguments,
+    #     data_collator: Optional[DataCollator] = None,
+    #     train_dataset: Optional[Dataset] = None,
+    #     eval_dataset: Optional[Dataset] = None,
+    #     compute_metrics: Optional[Callable[[EvalPrediction], Dict]] = None,
+    #     prediction_loss_only=False,
+    #     tb_writer: Optional["SummaryWriter"] = None,
+    #     optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = None,
+    # ):
+    #     """
+    #     Trainer is a simple but feature-complete training and eval loop for PyTorch,
+    #     optimized for Transformers.
+    #     Args:
+    #         prediction_loss_only:
+    #             (Optional) in evaluation and prediction, only return the loss
+    #     """
+    #     super().__init__(model, args, data_collator, train_dataset, eval_dataset, compute_metrics,
+    #                      prediction_loss_only, tb_writer, optimizers)
+    #
+    # def get_train_dataloader(self):
+    #     super().get_train_dataloader()
+    #
+    # def get_eval_dataloader(self, eval_dataset: Optional[Dataset] = None):
+    #     super().get_eval_dataloader(eval_dataset)
+    #
+    # def get_test_dataloader(self, test_dataset: Dataset):
+    #     super().get_test_dataloader(test_dataset)
+    #
+    # def get_optimizers(self, num_training_steps: int):
+    #     """
+    #     Setup the optimizer and the learning rate scheduler.
+    #     We provide a reasonable default that works well.
+    #     If you want to use something else, you can pass a tuple in the Trainer's init,
+    #     or override this method in a subclass.
+    #     """
+    #     super().get_optimizers(num_training_steps)
+    #
+    # def _setup_wandb(self):
+    #     """
+    #     Setup the optional Weights & Biases (`wandb`) integration.
+    #     One can override this method to customize the setup if needed.  Find more information at https://docs.wandb.com/huggingface
+    #     You can also override the following environment variables:
+    #     Environment:
+    #         WANDB_WATCH:
+    #             (Optional, ["gradients", "all", "false"]) "gradients" by default, set to "false" to disable gradient logging
+    #             or "all" to log gradients and parameters
+    #         WANDB_PROJECT:
+    #             (Optional): str - "huggingface" by default, set this to a custom string to store results in a different project
+    #         WANDB_DISABLED:
+    #             (Optional): boolean - defaults to false, set to "true" to disable wandb entirely
+    #     """
+    #     super()._setup_wandb()
+    #
+    # def num_examples(self, dataloader):
+    #     """
+    #     Helper to get num of examples from a DataLoader, by accessing its Dataset.
+    #     """
+    #     super().num_examples(dataloader)
 
     def train(self, model_path: Optional[str] = None):
         """
@@ -349,71 +349,71 @@ class ExtendedTrainer(Trainer):
         logger.info("\n\nTraining completed. Do not forget to share your model on huggingface.co/models =)\n\n")
         return TrainOutput(self.global_step, tr_loss / self.global_step)
 
-    def _log(self, logs: Dict[str, float], iterator: Optional[tqdm] = None) -> None:
-        super()._log(logs, iterator)
-
-    def _training_step(self, model: nn.Module, inputs: Dict[str, torch.Tensor], optimizer: torch.optim.Optimizer):
-        super()._training_step(model, inputs, optimizer)
-
-    def is_local_master(self):
-        super().is_local_master()
-
-    def is_world_master(self):
-        """
-        This will be True only in one process, even in distributed mode,
-        even when training on multiple machines.
-        """
-        super().is_world_master()
-
-    def save_model(self, output_dir: Optional[str] = None):
-        """
-        Saving best-practices: if you use default names for the model,
-        you can reload it using from_pretrained().
-        Will only save from the master process.
-        """
-        super().save_model(output_dir)
-
-    def _save_tpu(self, output_dir: Optional[str] = None):
-        super().save_tpu(output_dir)
-
-    def _save(self, output_dir: Optional[str] = None):
-        super()._save()
-
-    def _sorted_checkpoints(self, checkpoint_prefix=PREFIX_CHECKPOINT_DIR, use_mtime=False):
-        super()._sorted_checkpoints(checkpoint_prefix, use_mtime)
-
-    def _rotate_checkpoints(self, use_mtime=False):
-        super()._rotate_checkpoints(use_mtime)
-
-    def evaluate(self, eval_dataset: Optional[Dataset] = None, prediction_loss_only: Optional[bool] = None,):
-        """
-        Run evaluation and return metrics.
-        The calling script will be responsible for providing a method to compute metrics, as they are
-        task-dependent.
-        Args:
-            eval_dataset: (Optional) Pass a dataset if you wish to override
-            the one on the instance.
-        Returns:
-            A dict containing:
-                - the eval loss
-                - the potential metrics computed from the predictions
-        """
-        super().evaluate(eval_dataset, prediction_loss_only)
-
-    def predict(self, test_dataset: Dataset):
-        """
-        Run prediction and return predictions and potential metrics.
-        Depending on the dataset and your use case, your test dataset may contain labels.
-        In that case, this method will also return metrics, like in evaluate().
-        """
-        super().predict(test_dataset)
-
-    def _prediction_loop(self, dataloader: DataLoader, description: str, prediction_loss_only: Optional[bool] = None):
-        """
-        Prediction/evaluation loop, shared by `evaluate()` and `predict()`.
-        Works both with or without labels.
-        """
-        super()._prediction_loop(dataloader, description, prediction_loss_only)
+    # def _log(self, logs: Dict[str, float], iterator: Optional[tqdm] = None) -> None:
+    #     super()._log(logs, iterator)
+    #
+    # def _training_step(self, model: nn.Module, inputs: Dict[str, torch.Tensor], optimizer: torch.optim.Optimizer):
+    #     super()._training_step(model, inputs, optimizer)
+    #
+    # def is_local_master(self):
+    #     super().is_local_master()
+    #
+    # def is_world_master(self):
+    #     """
+    #     This will be True only in one process, even in distributed mode,
+    #     even when training on multiple machines.
+    #     """
+    #     super().is_world_master()
+    #
+    # def save_model(self, output_dir: Optional[str] = None):
+    #     """
+    #     Saving best-practices: if you use default names for the model,
+    #     you can reload it using from_pretrained().
+    #     Will only save from the master process.
+    #     """
+    #     super().save_model(output_dir)
+    #
+    # def _save_tpu(self, output_dir: Optional[str] = None):
+    #     super().save_tpu(output_dir)
+    #
+    # def _save(self, output_dir: Optional[str] = None):
+    #     super()._save()
+    #
+    # def _sorted_checkpoints(self, checkpoint_prefix=PREFIX_CHECKPOINT_DIR, use_mtime=False):
+    #     super()._sorted_checkpoints(checkpoint_prefix, use_mtime)
+    #
+    # def _rotate_checkpoints(self, use_mtime=False):
+    #     super()._rotate_checkpoints(use_mtime)
+    #
+    # def evaluate(self, eval_dataset: Optional[Dataset] = None, prediction_loss_only: Optional[bool] = None,):
+    #     """
+    #     Run evaluation and return metrics.
+    #     The calling script will be responsible for providing a method to compute metrics, as they are
+    #     task-dependent.
+    #     Args:
+    #         eval_dataset: (Optional) Pass a dataset if you wish to override
+    #         the one on the instance.
+    #     Returns:
+    #         A dict containing:
+    #             - the eval loss
+    #             - the potential metrics computed from the predictions
+    #     """
+    #     super().evaluate(eval_dataset, prediction_loss_only)
+    #
+    # def predict(self, test_dataset: Dataset):
+    #     """
+    #     Run prediction and return predictions and potential metrics.
+    #     Depending on the dataset and your use case, your test dataset may contain labels.
+    #     In that case, this method will also return metrics, like in evaluate().
+    #     """
+    #     super().predict(test_dataset)
+    #
+    # def _prediction_loop(self, dataloader: DataLoader, description: str, prediction_loss_only: Optional[bool] = None):
+    #     """
+    #     Prediction/evaluation loop, shared by `evaluate()` and `predict()`.
+    #     Works both with or without labels.
+    #     """
+    #     super()._prediction_loop(dataloader, description, prediction_loss_only)
 
 # @dataclass
 # class ModelArguments:
@@ -640,6 +640,7 @@ class ExtendedTrainer(Trainer):
 #
 #     return results
 
+
 @dataclass
 class ModelArguments:
     """
@@ -648,6 +649,7 @@ class ModelArguments:
     model_name_or_path: str
     config_name: str = None
     cache_dir: str = None
+
 
 @dataclass
 class DataTrainingArguments:
@@ -658,6 +660,7 @@ class DataTrainingArguments:
     line_by_line: bool
     block_size: int
     overwrite_cache: bool
+
 
 def get_dataset(args: DataTrainingArguments, tokenizer: PreTrainedTokenizer, evaluate=False, local_rank=-1):
     file_path = args.eval_data_file if evaluate else args.train_data_file
