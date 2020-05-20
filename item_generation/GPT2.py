@@ -162,7 +162,7 @@ class ExtendedTrainer(Trainer):
     #     """
     #     super().num_examples(dataloader)
 
-    def train(self, model_path: Optional[str] = None):
+    def train(self, tokenizer, model_path: Optional[str] = None):
         """
         Main training entry point.
         Args:
@@ -263,6 +263,7 @@ class ExtendedTrainer(Trainer):
         )
 
         list_losses = []
+        prev_loss = 0
         # plt.ion()
 
         for epoch in train_iterator:
@@ -309,8 +310,6 @@ class ExtendedTrainer(Trainer):
                             if self.args.evaluate_during_training:
                                 self.evaluate()
 
-                            # Todo generating items to see how the model is doing
-
                         if self.args.save_steps > 0 and self.global_step % self.args.save_steps == 0:
                             # In all cases (even distributed/parallel), self.model is always a reference
                             # to the model we want to save.
@@ -333,7 +332,9 @@ class ExtendedTrainer(Trainer):
                     epoch_iterator.close()
                     break
 
-            depicted_loss = (tr_loss - logging_loss) / self.args.logging_steps
+
+            depicted_loss = (tr_loss - prev_loss) / self.args.logging_steps
+            prev_loss = tr_loss
             list_losses.append(depicted_loss)
             plt.plot(list_losses, label='current loss')
             # plt.legend()
@@ -341,6 +342,25 @@ class ExtendedTrainer(Trainer):
             # plt.plot(list_losses, label='current loss')
             # plt.draw()
             # plt.clf()
+
+            # Todo generating items to see how the model is doing
+            model.eval()
+            text = "<|startoftext|>#I"
+            indexed_tokens = tokenizer.encode(text)
+            # set top_k = 50 and set top_p = 0.95 and num_return_sequences = 3
+            sample_outputs = model.generate(
+                indexed_tokens,
+                do_sample=True,
+                max_length=50,
+                top_k=50,
+                top_p=0.95,
+                num_return_sequences=4
+            )
+
+            print("Output:\n" + 100 * '-')
+            for i, sample_output in enumerate(sample_outputs):
+                print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
+            model.train()
 
             if 0 < self.args.max_steps < self.global_step:
                 train_iterator.close()
@@ -816,7 +836,7 @@ def train_GPT2(model_name_or_path, train_data_file, output_dir, config_name=None
     # Training
     if training_args.do_train:
         model_path = model_args.model_name_or_path
-        trainer.train(model_path=model_path)
+        trainer.train(tokenizer, model_path=model_path)
         trainer.save_model()
         # For convenience, we also re-save the tokenizer to the same directory,
         # so that you can share your model easily on huggingface.co/models =)
