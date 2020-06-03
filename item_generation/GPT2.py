@@ -52,6 +52,9 @@ logger = logging.getLogger(__name__)
 MODEL_CONFIG_CLASSES = list(MODEL_WITH_LM_HEAD_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
+from item_generation.utils import preprocess_db, preprocess_generated_list
+from item_generation.metrics import db_match
+
 try:
     from apex import amp
 
@@ -87,89 +90,37 @@ class ExtendedTrainer(Trainer):
     Trainer is a simple but feature-complete training and eval loop for PyTorch,
     optimized for Transformers.
     """
+    #
+    # model: PreTrainedModel
+    # args: TrainingArguments
+    # data_collator: DataCollator
+    # train_dataset: Optional[Dataset]
+    # eval_dataset: Optional[Dataset]
+    # compute_metrics: Optional[Callable[[EvalPrediction], Dict]] = None
+    # prediction_loss_only: bool
+    # tb_writer: Optional["SummaryWriter"] = None
+    # optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = None
+    # global_step: Optional[int] = None
+    # epoch: Optional[float] = None
 
-    model: PreTrainedModel
-    args: TrainingArguments
-    data_collator: DataCollator
-    train_dataset: Optional[Dataset]
-    eval_dataset: Optional[Dataset]
-    compute_metrics: Optional[Callable[[EvalPrediction], Dict]] = None
-    prediction_loss_only: bool
-    tb_writer: Optional["SummaryWriter"] = None
-    optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = None
-    global_step: Optional[int] = None
-    epoch: Optional[float] = None
-
-    # def __init__(
-    #     self,
-    #     model: PreTrainedModel,
-    #     args: TrainingArguments,
-    #     data_collator: Optional[DataCollator] = None,
-    #     train_dataset: Optional[Dataset] = None,
-    #     eval_dataset: Optional[Dataset] = None,
-    #     compute_metrics: Optional[Callable[[EvalPrediction], Dict]] = None,
-    #     prediction_loss_only=False,
-    #     tb_writer: Optional["SummaryWriter"] = None,
-    #     optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = None,
-    # ):
-    #     """
-    #     Trainer is a simple but feature-complete training and eval loop for PyTorch,
-    #     optimized for Transformers.
-    #     Args:
-    #         prediction_loss_only:
-    #             (Optional) in evaluation and prediction, only return the loss
-    #     """
-    #     super().__init__(model, args, data_collator, train_dataset, eval_dataset, compute_metrics,
-    #                      prediction_loss_only, tb_writer, optimizers)
-    #
-    # def get_train_dataloader(self):
-    #     super().get_train_dataloader()
-    #
-    # def get_eval_dataloader(self, eval_dataset: Optional[Dataset] = None):
-    #     super().get_eval_dataloader(eval_dataset)
-    #
-    # def get_test_dataloader(self, test_dataset: Dataset):
-    #     super().get_test_dataloader(test_dataset)
-    #
-    # def get_optimizers(self, num_training_steps: int):
-    #     """
-    #     Setup the optimizer and the learning rate scheduler.
-    #     We provide a reasonable default that works well.
-    #     If you want to use something else, you can pass a tuple in the Trainer's init,
-    #     or override this method in a subclass.
-    #     """
-    #     super().get_optimizers(num_training_steps)
-    #
-    # def _setup_wandb(self):
-    #     """
-    #     Setup the optional Weights & Biases (`wandb`) integration.
-    #     One can override this method to customize the setup if needed.  Find more information at https://docs.wandb.com/huggingface
-    #     You can also override the following environment variables:
-    #     Environment:
-    #         WANDB_WATCH:
-    #             (Optional, ["gradients", "all", "false"]) "gradients" by default, set to "false" to disable gradient logging
-    #             or "all" to log gradients and parameters
-    #         WANDB_PROJECT:
-    #             (Optional): str - "huggingface" by default, set this to a custom string to store results in a different project
-    #         WANDB_DISABLED:
-    #             (Optional): boolean - defaults to false, set to "true" to disable wandb entirely
-    #     """
-    #     super()._setup_wandb()
-    #
-    # def num_examples(self, dataloader):
-    #     """
-    #     Helper to get num of examples from a DataLoader, by accessing its Dataset.
-    #     """
-    #     super().num_examples(dataloader)
-
-    def train(self, tokenizer, model_path: Optional[str] = None):
+    def train(self, tokenizer, train_data_file, model_path: Optional[str] = None):
         """
         Main training entry point.
         Args:
             model_path:
                 (Optional) Local path to model if model to train has been instantiated from a local path
                 If present, we will try reloading the optimizer/scheduler states from there.
+            Todo
         """
+
+        f = open(train_data_file, 'r+', encoding="utf-8")
+        list_train_file = []
+
+        for line in f:
+            list_train_file.append(line)
+
+        list_train_file = preprocess_db(list_train_file)
+
         train_dataloader = self.get_train_dataloader()
         if self.args.max_steps > 0:
             t_total = self.args.max_steps
@@ -357,10 +308,21 @@ class ExtendedTrainer(Trainer):
                 num_return_sequences=4
             )
 
+            decoded_outputs = []
+
             print("Output:\n" + 100 * '-')
             for i, sample_output in enumerate(sample_outputs):
-                print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
+                if i < 3:
+                    print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
+                decoded_outputs.append(tokenizer.decode(sample_output, skip_special_tokens=True))
             model.train()
+
+            match_tuple = db_match(decoded_outputs, list_train_file)
+            print(str(match_tuple[0]) + " generated strings match the ones from the training data")
+            if len(match_tuple[1]) != 0:
+                print("The following items occur in both the training and generated datasets:")
+                for item in match_tuple[1]:
+                    print(item)
 
             if 0 < self.args.max_steps < self.global_step:
                 train_iterator.close()
@@ -374,297 +336,6 @@ class ExtendedTrainer(Trainer):
 
         logger.info("\n\nTraining completed. Do not forget to share your model on huggingface.co/models =)\n\n")
         return TrainOutput(self.global_step, tr_loss / self.global_step)
-
-    # def _log(self, logs: Dict[str, float], iterator: Optional[tqdm] = None) -> None:
-    #     super()._log(logs, iterator)
-    #
-    # def _training_step(self, model: nn.Module, inputs: Dict[str, torch.Tensor], optimizer: torch.optim.Optimizer):
-    #     super()._training_step(model, inputs, optimizer)
-    #
-    # def is_local_master(self):
-    #     super().is_local_master()
-    #
-    # def is_world_master(self):
-    #     """
-    #     This will be True only in one process, even in distributed mode,
-    #     even when training on multiple machines.
-    #     """
-    #     super().is_world_master()
-    #
-    # def save_model(self, output_dir: Optional[str] = None):
-    #     """
-    #     Saving best-practices: if you use default names for the model,
-    #     you can reload it using from_pretrained().
-    #     Will only save from the master process.
-    #     """
-    #     super().save_model(output_dir)
-    #
-    # def _save_tpu(self, output_dir: Optional[str] = None):
-    #     super().save_tpu(output_dir)
-    #
-    # def _save(self, output_dir: Optional[str] = None):
-    #     super()._save()
-    #
-    # def _sorted_checkpoints(self, checkpoint_prefix=PREFIX_CHECKPOINT_DIR, use_mtime=False):
-    #     super()._sorted_checkpoints(checkpoint_prefix, use_mtime)
-    #
-    # def _rotate_checkpoints(self, use_mtime=False):
-    #     super()._rotate_checkpoints(use_mtime)
-    #
-    # def evaluate(self, eval_dataset: Optional[Dataset] = None, prediction_loss_only: Optional[bool] = None,):
-    #     """
-    #     Run evaluation and return metrics.
-    #     The calling script will be responsible for providing a method to compute metrics, as they are
-    #     task-dependent.
-    #     Args:
-    #         eval_dataset: (Optional) Pass a dataset if you wish to override
-    #         the one on the instance.
-    #     Returns:
-    #         A dict containing:
-    #             - the eval loss
-    #             - the potential metrics computed from the predictions
-    #     """
-    #     super().evaluate(eval_dataset, prediction_loss_only)
-    #
-    # def predict(self, test_dataset: Dataset):
-    #     """
-    #     Run prediction and return predictions and potential metrics.
-    #     Depending on the dataset and your use case, your test dataset may contain labels.
-    #     In that case, this method will also return metrics, like in evaluate().
-    #     """
-    #     super().predict(test_dataset)
-    #
-    # def _prediction_loop(self, dataloader: DataLoader, description: str, prediction_loss_only: Optional[bool] = None):
-    #     """
-    #     Prediction/evaluation loop, shared by `evaluate()` and `predict()`.
-    #     Works both with or without labels.
-    #     """
-    #     super()._prediction_loop(dataloader, description, prediction_loss_only)
-
-# @dataclass
-# class ModelArguments:
-#     """
-#     Arguments pertaining to which model/config/tokenizer we are going to fine-tune, or train from scratch.
-#     """
-#
-#     model_name_or_path: Optional[str] = field(
-#         default=None,
-#         metadata={
-#             "help": "The model checkpoint for weights initialization. Leave None if you want to train a model from scratch."
-#         },
-#     )
-#     model_type: Optional[str] = field(
-#         default=None,
-#         metadata={"help": "If training from scratch, pass a model type from the list: " + ", ".join(MODEL_TYPES)},
-#     )
-#     config_name: Optional[str] = field(
-#         default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"}
-#     )
-#     tokenizer_name: Optional[str] = field(
-#         default=None, metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"}
-#     )
-#     cache_dir: Optional[str] = field(
-#         default=None, metadata={"help": "Where do you want to store the pretrained models downloaded from s3"}
-#     )
-#
-#
-# @dataclass
-# class DataTrainingArguments:
-#     """
-#     Arguments pertaining to what data we are going to input our model for training and eval.
-#     """
-#
-#     train_data_file: Optional[str] = field(
-#         default=None, metadata={"help": "The input training data file (a text file)."}
-#     )
-#     eval_data_file: Optional[str] = field(
-#         default=None,
-#         metadata={"help": "An optional input evaluation data file to evaluate the perplexity on (a text file)."},
-#     )
-#     line_by_line: bool = field(
-#         default=False,
-#         metadata={"help": "Whether distinct lines of text in the dataset are to be handled as distinct sequences."},
-#     )
-#
-#     mlm: bool = field(
-#         default=False, metadata={"help": "Train with masked-language modeling loss instead of language modeling."}
-#     )
-#     mlm_probability: float = field(
-#         default=0.15, metadata={"help": "Ratio of tokens to mask for masked language modeling loss"}
-#     )
-#
-#     block_size: int = field(
-#         default=-1,
-#         metadata={
-#             "help": "Optional input sequence length after tokenization."
-#             "The training dataset will be truncated in block of this size for training."
-#             "Default to the model max input length for single sentence inputs (take into account special tokens)."
-#         },
-#     )
-#     overwrite_cache: bool = field(
-#         default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
-#     )
-#
-#
-# def get_dataset(args: DataTrainingArguments, tokenizer: PreTrainedTokenizer, evaluate=False, local_rank=-1):
-#     file_path = args.eval_data_file if evaluate else args.train_data_file
-#     if args.line_by_line:
-#         return LineByLineTextDataset(tokenizer=tokenizer, file_path=file_path, block_size=args.block_size)
-#     else:
-#         return TextDataset(tokenizer=tokenizer, file_path=file_path, block_size=args.block_size)
-#
-#
-# def main():
-#     # See all possible arguments in src/transformers/training_args.py
-#     # or by passing the --help flag to this script.
-#     # We now keep distinct sets of args, for a cleaner separation of concerns.
-#
-#     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
-#     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-#
-#     if data_args.eval_data_file is None and training_args.do_eval:
-#         raise ValueError(
-#             "Cannot do evaluation without an evaluation data file. Either supply a file to --eval_data_file "
-#             "or remove the --do_eval argument."
-#         )
-#
-#     if (
-#         os.path.exists(training_args.output_dir)
-#         and os.listdir(training_args.output_dir)
-#         and training_args.do_train
-#         and not training_args.overwrite_output_dir
-#     ):
-#         raise ValueError(
-#             f"Output directory ({training_args.output_dir}) already exists and is not empty. Use --overwrite_output_dir to overcome."
-#         )
-#
-#     # Setup logging
-#     logging.basicConfig(
-#         format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
-#         datefmt="%m/%d/%Y %H:%M:%S",
-#         level=logging.INFO if training_args.local_rank in [-1, 0] else logging.WARN,
-#     )
-#     logger.warning(
-#         "Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
-#         training_args.local_rank,
-#         training_args.device,
-#         training_args.n_gpu,
-#         bool(training_args.local_rank != -1),
-#         training_args.fp16,
-#     )
-#     logger.info("Training/evaluation parameters %s", training_args)
-#
-#     # Set seed
-#     set_seed(training_args.seed)
-#
-#     # Load pretrained model and tokenizer
-#     #
-#     # Distributed training:
-#     # The .from_pretrained methods guarantee that only one local process can concurrently
-#     # download model & vocab.
-#
-#     if model_args.config_name:
-#         config = AutoConfig.from_pretrained(model_args.config_name, cache_dir=model_args.cache_dir)
-#     elif model_args.model_name_or_path:
-#         config = AutoConfig.from_pretrained(model_args.model_name_or_path, cache_dir=model_args.cache_dir)
-#     else:
-#         config = CONFIG_MAPPING[model_args.model_type]()
-#         logger.warning("You are instantiating a new config instance from scratch.")
-#
-#     if model_args.tokenizer_name:
-#         tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, cache_dir=model_args.cache_dir)
-#     elif model_args.model_name_or_path:
-#         tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path, cache_dir=model_args.cache_dir)
-#     else:
-#         raise ValueError(
-#             "You are instantiating a new tokenizer from scratch. This is not supported, but you can do it from another script, save it,"
-#             "and load it from here, using --tokenizer_name"
-#         )
-#
-#     if model_args.model_name_or_path:
-#         model = AutoModelWithLMHead.from_pretrained(
-#             model_args.model_name_or_path,
-#             from_tf=bool(".ckpt" in model_args.model_name_or_path),
-#             config=config,
-#             cache_dir=model_args.cache_dir,
-#         )
-#     else:
-#         logger.info("Training new model from scratch")
-#         model = AutoModelWithLMHead.from_config(config)
-#
-#     model.resize_token_embeddings(len(tokenizer))
-#
-#     if config.model_type in ["bert", "roberta", "distilbert", "camembert"] and not data_args.mlm:
-#         raise ValueError(
-#             "BERT and RoBERTa-like models do not have LM heads but masked LM heads. They must be run using the --mlm "
-#             "flag (masked language modeling)."
-#         )
-#
-#     if data_args.block_size <= 0:
-#         data_args.block_size = tokenizer.max_len
-#         # Our input block size will be the max possible for the model
-#     else:
-#         data_args.block_size = min(data_args.block_size, tokenizer.max_len)
-#
-#     # Get datasets
-#     train_dataset = (
-#         get_dataset(data_args, tokenizer=tokenizer, local_rank=training_args.local_rank)
-#         if training_args.do_train
-#         else None
-#     )
-#     eval_dataset = (
-#         get_dataset(data_args, tokenizer=tokenizer, local_rank=training_args.local_rank, evaluate=True)
-#         if training_args.do_eval
-#         else None
-#     )
-#     data_collator = DataCollatorForLanguageModeling(
-#         tokenizer=tokenizer, mlm=data_args.mlm, mlm_probability=data_args.mlm_probability
-#     )
-#
-#     # Initialize our Trainer
-#     trainer = Trainer(
-#         model=model,
-#         args=training_args,
-#         data_collator=data_collator,
-#         train_dataset=train_dataset,
-#         eval_dataset=eval_dataset,
-#         prediction_loss_only=True,
-#     )
-#
-#     # Training
-#     if training_args.do_train:
-#         model_path = (
-#             model_args.model_name_or_path
-#             if model_args.model_name_or_path is not None and os.path.isdir(model_args.model_name_or_path)
-#             else None
-#         )
-#         trainer.train(model_path=model_path)
-#         trainer.save_model()
-#         # For convenience, we also re-save the tokenizer to the same directory,
-#         # so that you can share your model easily on huggingface.co/models =)
-#         if trainer.is_world_master():
-#             tokenizer.save_pretrained(training_args.output_dir)
-#
-#     # Evaluation
-#     results = {}
-#     if training_args.do_eval and training_args.local_rank in [-1, 0]:
-#         logger.info("*** Evaluate ***")
-#
-#         eval_output = trainer.evaluate()
-#
-#         perplexity = math.exp(eval_output["eval_loss"])
-#         result = {"perplexity": perplexity}
-#
-#         output_eval_file = os.path.join(training_args.output_dir, "eval_results_lm.txt")
-#         with open(output_eval_file, "w") as writer:
-#             logger.info("***** Eval results *****")
-#             for key in sorted(result.keys()):
-#                 logger.info("  %s = %s", key, str(result[key]))
-#                 writer.write("%s = %s\n" % (key, str(result[key])))
-#
-#         results.update(result)
-#
-#     return results
 
 
 @dataclass

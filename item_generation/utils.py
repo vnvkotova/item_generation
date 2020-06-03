@@ -4,6 +4,41 @@ from sklearn.preprocessing import MultiLabelBinarizer
 import numpy as np
 
 
+def preprocess_db(db_list):
+    """
+    Todo
+    :param db_list:
+    :return:
+    """
+
+    for i, sentence in enumerate(db_list):
+        sentence = sentence.lower()
+        sentence = re.sub(r'.*@', r'', sentence)
+        db_list[i] = re.sub(r'.*', '', sentence)
+
+    return db_list
+
+
+def preprocess_generated_list(generated_list):
+    """
+    Todo
+    :param generated_list:
+    :return:
+    """
+
+    # deletes the labels in the beginning of generated sentences, lowercases the string, deletes "." from the end
+    # of the sentence if it's there and similarly "I " from the beginning
+    for i, sentence in enumerate(generated_list):
+        sentence = sentence.lower()
+        if sentence[-1] == ".":
+            sentence = sentence[:-1]
+        if sentence[:2] == "i ":
+            sentence = sentence[2:]
+        generated_list[i] = re.sub(r'.*@', r'', sentence)
+
+    return generated_list
+
+
 def input_file_to_list(file_path):
     """
     a function to convert an input training file with incorporated labels,  <|startoftext|> and <|endoftext|> into a list of items
@@ -72,6 +107,7 @@ def prepare_additional_IPIP(csv_IPIP_path, csv_additional_path):
     df_output.update(df_output[['item']].applymap('\"{}\"'.format))
     # df.to_csv(save_file_name) #df.to_csv("/Users/veronikakotova/Desktop/TUM/thesis/val.csv")
     return df_output
+
 
 def warmup_linear(x, warmup=0.002):
     if x < warmup:
