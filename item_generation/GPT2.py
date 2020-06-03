@@ -507,7 +507,7 @@ def train_GPT2(model_name_or_path, train_data_file, output_dir, config_name=None
     # Training
     if training_args.do_train:
         model_path = model_args.model_name_or_path
-        trainer.train(tokenizer, model_path=model_path)
+        trainer.train(tokenizer, train_data_file, model_path=model_path)
         trainer.save_model()
         # For convenience, we also re-save the tokenizer to the same directory,
         # so that you can share your model easily on huggingface.co/models =)
