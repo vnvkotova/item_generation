@@ -13,6 +13,8 @@ def preprocess_db(db_list):
 
     for i, sentence in enumerate(db_list):
         sentence = sentence.lower()
+        if sentence[:2] == "i ":
+            sentence = sentence[2:]
         sentence = re.sub(r'.*@', r'', sentence)
         db_list[i] = re.sub(r'.*', '', sentence)
 

@@ -295,6 +295,7 @@ class ExtendedTrainer(Trainer):
 
             # Todo generating items to see how the model is doing
             model.eval()
+            # Todo: generate items just strarting with "#" instead of "<|startoftext|>#"
             text = "<|startoftext|>#"
             indexed_tokens = tokenizer.encode(text, return_tensors='pt')
             indexed_tokens = indexed_tokens.to('cuda')
