@@ -306,7 +306,7 @@ class ExtendedTrainer(Trainer):
                 max_length=50,
                 top_k=50,
                 top_p=0.95,
-                num_return_sequences=4
+                num_return_sequences=30
             )
 
             decoded_outputs = []

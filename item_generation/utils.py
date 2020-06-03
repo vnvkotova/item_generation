@@ -35,9 +35,9 @@ def preprocess_generated_list(generated_list):
         sentence = sentence.lower()
         if sentence[-1] == ".":
             sentence = sentence[:-1]
+        sentence = re.sub(r'.*@', r'', sentence)
         if sentence[:2] == "i ":
-            sentence = sentence[2:]
-        generated_list[i] = re.sub(r'.*@', r'', sentence)
+            generated_list[i] = sentence[2:]
 
     return generated_list
 
