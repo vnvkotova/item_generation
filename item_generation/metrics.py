@@ -10,8 +10,6 @@ def db_match(list_generated, list_db):
 
     list_generated = preprocess_generated_list(list_generated)
 
-    print(list_generated)
-
     overlap_count = len(list(set(list_generated) & set(list_db)))
 
     temp = set(list_db)

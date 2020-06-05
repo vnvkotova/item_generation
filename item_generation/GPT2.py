@@ -293,10 +293,9 @@ class ExtendedTrainer(Trainer):
             # plt.draw()
             # plt.clf()
 
-            # Todo generating items to see how the model is doing
             model.eval()
             # Todo: generate items just strarting with "#" instead of "<|startoftext|>#"
-            text = "<|startoftext|>#"
+            text = "#"
             indexed_tokens = tokenizer.encode(text, return_tensors='pt')
             indexed_tokens = indexed_tokens.to('cuda')
             # set top_k = 50 and set top_p = 0.95 and num_return_sequences = 3
