@@ -66,7 +66,7 @@ def train_multilabel_BERT(args):
     metrics = []
     metrics.append({'name': 'accuracy_thresh', 'function': accuracy_thresh})
     metrics.append({'name': 'roc_auc', 'function': roc_auc})
-    metrics.append({'name': 'fbeta', 'function': fbeta})
+    metrics.append({'name': 'fbeta_modified', 'function': fbeta_modified})
 
     # Sigmoid layer and Binary Cross Entropy loss (Todo: is it like Softmax activation plus a Cross-Entropy loss?)
     learner = BertLearner.from_pretrained_model(databunch, pretrained_path=args.model_name, metrics=metrics,
