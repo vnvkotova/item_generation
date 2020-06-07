@@ -20,7 +20,9 @@ import datetime
 from fast_bert.modeling import BertForMultiLabelSequenceClassification
 from fast_bert.data_cls import BertDataBunch, InputExample, InputFeatures, MultiLabelTextProcessor, convert_examples_to_features
 from fast_bert.learner_cls import BertLearner
-from fast_bert.metrics import accuracy_multilabel, accuracy_thresh, fbeta, roc_auc
+from fast_bert.metrics import accuracy_multilabel, accuracy_thresh, roc_auc
+
+from .metrics import fbeta
 
 
 def train_multilabel_BERT(args):
@@ -66,7 +68,7 @@ def train_multilabel_BERT(args):
     metrics = []
     metrics.append({'name': 'accuracy_thresh', 'function': accuracy_thresh})
     metrics.append({'name': 'roc_auc', 'function': roc_auc})
-    metrics.append({'name': 'fbeta_modified', 'function': fbeta_modified})
+    metrics.append({'name': 'fbeta', 'function': fbeta})
 
     # Sigmoid layer and Binary Cross Entropy loss (Todo: is it like Softmax activation plus a Cross-Entropy loss?)
     learner = BertLearner.from_pretrained_model(databunch, pretrained_path=args.model_name, metrics=metrics,
