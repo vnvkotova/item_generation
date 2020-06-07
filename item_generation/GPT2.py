@@ -287,15 +287,10 @@ class ExtendedTrainer(Trainer):
             prev_loss = tr_loss
             list_losses.append(depicted_loss)
             plt.plot(list_losses, label='current loss')
-            # plt.legend()
             plt.show()
-            # plt.plot(list_losses, label='current loss')
-            # plt.draw()
-            # plt.clf()
 
             model.eval()
-            # Todo: generate items just strarting with "#" instead of "<|startoftext|>#"
-            text = "#"
+            text = "<|startoftext|>#"
             indexed_tokens = tokenizer.encode(text, return_tensors='pt')
             indexed_tokens = indexed_tokens.to('cuda')
             # set top_k = 50 and set top_p = 0.95 and num_return_sequences = 3
