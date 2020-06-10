@@ -27,7 +27,7 @@ from .metrics import fbeta
 
 class ModifiedBertLearner(BertLearner):
 
-    def predict_batch(self, texts=None):
+    def predict_batch(self, texts=None, return_dict=True):
         """
         Return unsorted Predictions
         :param texts:
@@ -68,9 +68,11 @@ class ModifiedBertLearner(BertLearner):
                 all_logits = np.concatenate(
                     (all_logits, logits.detach().cpu().numpy()), axis=0
                 )
-
-        result_df = pd.DataFrame(all_logits, columns=self.data.labels)
-        results = result_df.to_dict("record")
+        if return_dict:
+            result_df = pd.DataFrame(all_logits, columns=self.data.labels)
+            results = result_df.to_dict("record")
+        else:
+            results = all_logits
 
         # return [sorted(x.items(), key=lambda kv: kv[1], reverse=True) for x in results]
         return results
