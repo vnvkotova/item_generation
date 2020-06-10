@@ -38,9 +38,9 @@ def fbeta(y_pred: Tensor, y_true: Tensor, thresh: float = 0.3, beta: float = 2, 
     if sigmoid:
         y_pred = y_pred.sigmoid()
     y_pred = (y_pred > thresh).float()
-    print(y_pred.shape())
+    print(y_pred.shape)
     y_true = y_true.float()
-    print(y_true.shape())
+    print(y_true.shape)
     TP = (y_pred * y_true).sum(dim=1)
     prec = TP / (y_pred.sum(dim=1) + eps)
     print("Precision = " + str(prec))
