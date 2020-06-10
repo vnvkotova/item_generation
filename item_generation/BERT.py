@@ -25,6 +25,57 @@ from fast_bert.metrics import accuracy_multilabel, accuracy_thresh, roc_auc
 from .metrics import fbeta
 
 
+class ModifiedBertLearner(BertLearner):
+
+    def predict_batch(self, texts=None):
+        """
+        Return unsorted Predictions
+        :param texts:
+        :return:
+        """
+
+        if texts:
+            dl = self.data.get_dl_from_texts(texts)
+        elif self.data.test_dl:
+            dl = self.data.test_dl
+        else:
+            dl = self.data.val_dl
+
+        all_logits = None
+
+        self.model.eval()
+        for step, batch in enumerate(dl):
+            batch = tuple(t.to(self.device) for t in batch)
+
+            inputs = {"input_ids": batch[0], "attention_mask": batch[1], "labels": None}
+
+            if self.model_type in ["bert", "xlnet"]:
+                inputs["token_type_ids"] = batch[2]
+
+            with torch.no_grad():
+                outputs = self.model(**inputs)
+                logits = outputs[0]
+                if self.multi_label:
+                    logits = logits.sigmoid()
+                # elif len(self.data.labels) == 2:
+                #     logits = logits.sigmoid()
+                else:
+                    logits = logits.softmax(dim=1)
+
+            if all_logits is None:
+                all_logits = logits.detach().cpu().numpy()
+            else:
+                all_logits = np.concatenate(
+                    (all_logits, logits.detach().cpu().numpy()), axis=0
+                )
+
+        result_df = pd.DataFrame(all_logits, columns=self.data.labels)
+        results = result_df.to_dict("record")
+
+        # return [sorted(x.items(), key=lambda kv: kv[1], reverse=True) for x in results]
+        return results
+
+
 def train_multilabel_BERT(args):
 
     torch.cuda.empty_cache()
@@ -71,7 +122,7 @@ def train_multilabel_BERT(args):
     metrics.append({'name': 'fbeta', 'function': fbeta})
 
     # Sigmoid layer and Binary Cross Entropy loss (Todo: is it like Softmax activation plus a Cross-Entropy loss?)
-    learner = BertLearner.from_pretrained_model(databunch, pretrained_path=args.model_name, metrics=metrics,
+    learner = ModifiedBertLearner.from_pretrained_model(databunch, pretrained_path=args.model_name, metrics=metrics,
                                                 device=device, logger=logger, output_dir=args.output_dir,
                                                 finetuned_wgts_path=args["finetuned_dir"], warmup_steps=args.warmup_steps,
                                                 multi_gpu=args.multi_gpu, is_fp16=args.fp16,
