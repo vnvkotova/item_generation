@@ -18,7 +18,7 @@ import logging
 import datetime
 
 # from fast_bert.modeling import BertForMultiLabelSequenceClassification
-from transformers import BertForSequenceClassification
+from transformers import BertForSequenceClassification, BertConfig, AutoModelForSequenceClassification, AutoConfig
 
 from fast_bert.data_cls import BertDataBunch, InputExample, InputFeatures, MultiLabelTextProcessor, convert_examples_to_features
 from fast_bert.learner_cls import BertLearner
@@ -28,7 +28,7 @@ from .metrics import fbeta
 
 from torch.nn import BCEWithLogitsLoss
 
-
+# Todo I assume that it's used in BertLearner in model = model_class[1].from_pretrained(...)
 class Modified_BertForMultiLabelSequenceClassification(BertForSequenceClassification):
     """BERT model for classification.
     This module is composed of the BERT model with a linear layer on top of
@@ -107,7 +107,92 @@ class Modified_BertForMultiLabelSequenceClassification(BertForSequenceClassifica
         return outputs  # (loss), logits, (hidden_states), (attentions)
 
 
+MODEL_CLASSES = {
+    "bert": (
+        BertConfig,
+        (BertForSequenceClassification, Modified_BertForMultiLabelSequenceClassification),
+        BertTokenizer,
+    ),
+}
+
 class ModifiedBertLearner(BertLearner):
+
+    @staticmethod
+    def from_pretrained_model(
+        dataBunch,
+        pretrained_path,
+        output_dir,
+        metrics,
+        device,
+        logger,
+        finetuned_wgts_path=None,
+        multi_gpu=True,
+        is_fp16=True,
+        loss_scale=0,
+        warmup_steps=0,
+        fp16_opt_level="O1",
+        grad_accumulation_steps=1,
+        multi_label=False,
+        max_grad_norm=1.0,
+        adam_epsilon=1e-8,
+        logging_steps=100,
+        freeze_transformer_layers=False
+    ):
+
+        model_state_dict = None
+
+        model_type = dataBunch.model_type
+
+        if torch.cuda.is_available():
+            map_location = lambda storage, loc: storage.cuda()
+        else:
+            map_location = 'cpu'
+
+        if finetuned_wgts_path:
+            model_state_dict = torch.load(finetuned_wgts_path, map_location=map_location)
+        else:
+            model_state_dict = None
+
+        if multi_label is True:
+            config_class, model_class, _ = MODEL_CLASSES[model_type]
+
+            config = config_class.from_pretrained(
+                str(pretrained_path), num_labels=len(dataBunch.labels)
+            )
+
+            model = model_class[1].from_pretrained(
+                str(pretrained_path), config=config, state_dict=model_state_dict
+            )
+        else:
+            config = AutoConfig.from_pretrained(
+                str(pretrained_path), num_labels=len(dataBunch.labels)
+            )
+            model = AutoModelForSequenceClassification.from_pretrained(
+                str(pretrained_path), config=config, state_dict=model_state_dict
+            )
+
+        model.to(device)
+
+        return ModifiedBertLearner(
+            dataBunch,
+            model,
+            str(pretrained_path),
+            output_dir,
+            metrics,
+            device,
+            logger,
+            multi_gpu,
+            is_fp16,
+            loss_scale,
+            warmup_steps,
+            fp16_opt_level,
+            grad_accumulation_steps,
+            multi_label,
+            max_grad_norm,
+            adam_epsilon,
+            logging_steps,
+            freeze_transformer_layers
+        )
 
     def predict_batch(self, texts=None, return_dict=True):
         """
