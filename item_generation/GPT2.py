@@ -307,9 +307,11 @@ class ExtendedTrainer(Trainer):
 
             print("Output:\n" + 100 * '-')
             for i, sample_output in enumerate(sample_outputs):
+                temp_sentence = tokenizer.decode(sample_output, skip_special_tokens=True)
                 if i < 3:
-                    print("{}: {}".format(i, tokenizer.decode(sample_output, skip_special_tokens=True)))
-                decoded_outputs.append(tokenizer.decode(sample_output, skip_special_tokens=True))
+                    print("{}: {}".format(i, temp_sentence))
+                logger.info(temp_sentence)
+                decoded_outputs.append(temp_sentence)
             model.train()
 
             match_tuple = db_match(decoded_outputs, list_train_file)
