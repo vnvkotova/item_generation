@@ -305,7 +305,7 @@ class ExtendedTrainer(Trainer):
 
             decoded_outputs = []
 
-            print("Output:\n" + 100 * '-')
+            # print("Output:\n" + 100 * '-')
             for i, sample_output in enumerate(sample_outputs):
                 temp_sentence = tokenizer.decode(sample_output, skip_special_tokens=True)
                 # if i < 3:
@@ -313,6 +313,8 @@ class ExtendedTrainer(Trainer):
                 logger.info(temp_sentence)
                 decoded_outputs.append(temp_sentence)
             model.train()
+
+            logger.info("------------------------------------------ Metrics ------------------------------------------")
 
             no_repeat_vals = len(decoded_outputs) - len(set(decoded_outputs))
             if no_repeat_vals != 0:
@@ -326,6 +328,7 @@ class ExtendedTrainer(Trainer):
                             "in the training dataset:")
                 # print("The following items occur in both the training and generated datasets:")
                 for item in match_tuple[1]:
+                    logger.info("print number %d", item)
                     logger.info(list_train_file[preprocessed_list_train_file.index(item)])
                     # print(item)
 

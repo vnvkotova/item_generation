@@ -10,10 +10,10 @@ def db_match(list_generated, list_db):
 
     list_generated = preprocess_generated_list(list_generated)
 
-    overlap_count = len(list(set(list_generated) & set(list_db)))
+    set_list_db = set(list_db)
+    overlap_count = len(list(set(list_generated) & set_list_db))
 
-    temp = set(list_db)
-    list_overlap = [value for value in list_generated if value in temp]
+    list_overlap = [value for value in list_generated if value in set_list_db]
 
     overlap_ratio = overlap_count/len(list_generated)
 
