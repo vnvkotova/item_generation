@@ -328,7 +328,6 @@ class ExtendedTrainer(Trainer):
                             "in the training dataset:")
                 # print("The following items occur in both the training and generated datasets:")
                 for item in match_tuple[1]:
-                    logger.info("print number %d", item)
                     logger.info(list_train_file[preprocessed_list_train_file.index(item)])
                     # print(item)
 
