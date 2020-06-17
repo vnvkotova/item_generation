@@ -16,7 +16,7 @@ def preprocess_db(db_list):
         sentence = re.sub(r'.*@', r'', sentence)
         if sentence[:2] == "i ":
             sentence = sentence[2:]
-        db_list[i] = sentence.split(".", 1)[0]
+        sentence = sentence.split(".", 1)[0]
         db_list[i] = sentence.split("<|e", 1)[0]
 
     return db_list

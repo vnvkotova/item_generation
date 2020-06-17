@@ -119,7 +119,7 @@ class ExtendedTrainer(Trainer):
         for line in f:
             list_train_file.append(line)
 
-        list_train_file = preprocess_db(list_train_file)
+        preprocessed_list_train_file = preprocess_db(list_train_file)
 
         train_dataloader = self.get_train_dataloader()
         if self.args.max_steps > 0:
@@ -308,18 +308,26 @@ class ExtendedTrainer(Trainer):
             print("Output:\n" + 100 * '-')
             for i, sample_output in enumerate(sample_outputs):
                 temp_sentence = tokenizer.decode(sample_output, skip_special_tokens=True)
-                if i < 3:
-                    print("{}: {}".format(i, temp_sentence))
+                # if i < 3:
+                #     print("{}: {}".format(i, temp_sentence))
                 logger.info(temp_sentence)
                 decoded_outputs.append(temp_sentence)
             model.train()
 
-            match_tuple = db_match(decoded_outputs, list_train_file)
-            print(str(match_tuple[0]) + " generated strings match the ones from the training data")
+            no_repeat_vals = len(decoded_outputs) - len(set(decoded_outputs))
+            if no_repeat_vals != 0:
+                logger.info("%d generated sentences are repeated in this batch", no_repeat_vals)
+
+            match_tuple = db_match(decoded_outputs, preprocessed_list_train_file)
+            logger.info("%d generated strings match the ones from the training data", match_tuple[0])
+            # print(str(match_tuple[0]) + " generated strings match the ones from the training data")
             if len(match_tuple[1]) != 0:
-                print("The following items occur in both the training and generated datasets:")
+                logger.info("These items occur in both the training and generated datasets with the following labels "
+                            "in the training dataset:")
+                # print("The following items occur in both the training and generated datasets:")
                 for item in match_tuple[1]:
-                    print(item)
+                    logger.info(list_train_file[preprocessed_list_train_file.index(item)])
+                    # print(item)
 
             if 0 < self.args.max_steps < self.global_step:
                 train_iterator.close()
