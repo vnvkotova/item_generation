@@ -10,16 +10,16 @@ def preprocess_db(db_list):
     :param db_list:
     :return:
     """
-
+    preprocessed_db_list = []
     for i, sentence in enumerate(db_list):
         sentence = sentence.lower()
         sentence = re.sub(r'.*@', r'', sentence)
         if sentence[:2] == "i ":
             sentence = sentence[2:]
         sentence = sentence.split(".", 1)[0]
-        db_list[i] = sentence.split("<|e", 1)[0]
+        preprocessed_db_list.append(sentence.split("<|e", 1)[0])
 
-    return db_list
+    return preprocessed_db_list
 
 
 def preprocess_generated_list(generated_list):
