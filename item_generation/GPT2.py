@@ -321,7 +321,7 @@ class ExtendedTrainer(Trainer):
                 logger.info("%d generated sentences are repeated in this batch", no_repeat_vals)
 
             match_tuple = db_match(decoded_outputs, preprocessed_list_train_file)
-            logger.info("%d generated strings match the ones from the training data", match_tuple[0])
+            logger.info("%f generated strings match the ones from the training data", match_tuple[0])
             # print(str(match_tuple[0]) + " generated strings match the ones from the training data")
             if len(match_tuple[1]) != 0:
                 logger.info("These items occur in both the training and generated datasets with the following labels "
