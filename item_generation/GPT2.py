@@ -294,12 +294,15 @@ class ExtendedTrainer(Trainer):
             indexed_tokens = tokenizer.encode(text, return_tensors='pt')
             indexed_tokens = indexed_tokens.to('cuda')
             # set top_k = 50 and set top_p = 0.95 and num_return_sequences = 3
+            # set top_k = 40 and set top_p = 0.95 and num_return_sequences = 3
+            # set top_k = 100 and set top_p = 0.95 and num_return_sequences = 3
+            # set top_k = 50 and set top_p = 0.50 and num_return_sequences = 3
             sample_outputs = model.generate(
                 indexed_tokens,
                 do_sample=True,
                 max_length=50,
-                top_k=100,
-                top_p=0.95,
+                top_k=50,
+                top_p=0.50,
                 num_return_sequences=30
             )
 
