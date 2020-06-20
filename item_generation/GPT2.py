@@ -11,6 +11,9 @@ import math
 import os
 from dataclasses import dataclass, field
 
+import pandas as pd
+import re
+
 from transformers import (
     CONFIG_MAPPING,
     MODEL_WITH_LM_HEAD_MAPPING,
@@ -527,5 +530,82 @@ def train_GPT2(model_name_or_path, train_data_file, output_dir, config_name=None
         # so that you can share your model easily on huggingface.co/models =)
         if trainer.is_world_master():
             tokenizer.save_pretrained(training_args.output_dir)
+
+    return None
+
+
+def prompt_GPT2(train_data_file, model_dir, prompt_text, max_length, top_k, top_p, num_return_sequences, output_name):
+    logging.basicConfig(level=logging.INFO)
+
+    f = open(train_data_file, 'r+', encoding="utf-8")
+    list_train_file = []
+    for line in f:
+        list_train_file.append(line)
+    preprocessed_list_train_file = preprocess_db(list_train_file)
+
+    tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
+    model = GPT2LMHeadModel.from_pretrained(model_dir)
+    model.cuda()
+    model.eval()
+
+    # Encode a text inputs
+    indexed_tokens = tokenizer.encode(prompt_text, return_tensors='pt')
+    indexed_tokens = indexed_tokens.to('cuda')
+
+    logging.info('     Generating items for the follwoing prompt sentence: %s', prompt_text)
+
+    # Todo change to args
+    sample_outputs = model.generate(indexed_tokens,
+                                    do_sample=True,
+                                    max_length=max_length,
+                                    top_k=top_k,
+                                    top_p=top_p,
+                                    num_return_sequences=num_return_sequences)
+
+    full_decoded_outputs = []
+    cropped_decoded_outputs = []
+    db_comparisson = []
+    multiple_generation = []
+    multiple_cropped_generation = []
+
+    # print("Output:\n" + 100 * '-')
+    for i, sample_output in enumerate(sample_outputs):
+        sentence = tokenizer.decode(sample_output, skip_special_tokens=True)
+        logging.info('     %s', sentence)
+        # Todo:
+        # Step 1: keep only the item: no labels, no tokens, nothing
+        temp_sentence = sentence.lower()
+        if temp_sentence[-1] == ".":
+            temp_sentence = temp_sentence[:-1]
+        temp_sentence = re.sub(r'.*@', r'', temp_sentence)
+        if temp_sentence[:2] == "i ":
+            temp_sentence = temp_sentence[2:]
+
+        # Step 2: check if it's in the db
+        # Step 3: add it to the correspoding DataFrame row !!! BUT I do want to have an initial item to be able to compare the labels
+        if temp_sentence in preprocessed_list_train_file:
+            db_comparisson.append(list_train_file[preprocessed_list_train_file.index(temp_sentence)])
+        else:
+            db_comparisson.append("no")
+
+        # Step 4: check if it's among the items generated before
+        # Step 5: add it
+        if sentence in full_decoded_outputs:
+            multiple_generation.append(1)
+        else:
+            multiple_generation.append(0)
+
+        if temp_sentence in cropped_decoded_outputs:
+            multiple_cropped_generation.append(1)
+        else:
+            multiple_cropped_generation.append(0)
+
+        cropped_decoded_outputs.append(temp_sentence)
+        full_decoded_outputs.append(sentence)
+
+    dict_df = {"Item": full_decoded_outputs, "Database": db_comparisson, "Fully-Repeated": multiple_generation,
+               "Partially-Repeated": multiple_cropped_generation}
+    df_output = pd.DataFrame.from_dict(dict_df)
+    df_output.to_csv(output_name, index=False)
 
     return None
