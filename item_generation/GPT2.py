@@ -55,8 +55,8 @@ logger = logging.getLogger(__name__)
 MODEL_CONFIG_CLASSES = list(MODEL_WITH_LM_HEAD_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
-from item_generation.utils import preprocess_db, preprocess_generated_list
-from item_generation.metrics import db_match
+from item_generation.utils import preprocess_db, preprocess_generated_list, convert_into_training_file
+from item_generation.metrics import db_match, overfit_count
 
 try:
     from apex import amp
@@ -106,7 +106,7 @@ class ExtendedTrainer(Trainer):
     # global_step: Optional[int] = None
     # epoch: Optional[float] = None
 
-    def train(self, tokenizer, train_data_file, model_path: Optional[str] = None):
+    def train(self, tokenizer, train_data, data_base, output_dir, model_path: Optional[str] = None):
         """
         Main training entry point.
         Args:
@@ -116,15 +116,25 @@ class ExtendedTrainer(Trainer):
             Todo
         """
 
-        f = open(train_data_file, 'r+', encoding="utf-8")
-        list_train_file = []
+        # Todo: decide what has to be done in case a txt file was passed as train_data
 
-        for line in f:
-            list_train_file.append(line)
+        if type(data_base) == str or type(train_data) == str:
+            logger.warning("Sorry, not all functionality is available if training data and the database itself are"
+                           "not in mongoDB.")
 
-        preprocessed_list_train_file = preprocess_db(list_train_file)
+        # Todo to be depricated
+        # f = open(train_data_file, 'r+', encoding="utf-8")
+        # list_train_file = []
+        #
+        # for line in f:
+        #     list_train_file.append(line)
+        #
+        # preprocessed_list_train_file = preprocess_db(list_train_file)
+        #
+        # df_aggregated_written = pd.read_excel(path_database)
 
         train_dataloader = self.get_train_dataloader()
+        num_train_epochs = 0
         if self.args.max_steps > 0:
             t_total = self.args.max_steps
             num_train_epochs = (
@@ -220,6 +230,14 @@ class ExtendedTrainer(Trainer):
         prev_loss = 0
         # plt.ion()
 
+        metric_overfit_items = []
+        metric_overfit_sentences = []
+        metric_classification_overfit_items = []
+        metric_classification_overfit_sentences = []
+        metric_classification_labels = []
+        metric_classification_F_score = []
+        current_epoch = 0
+
         for epoch in train_iterator:
             epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=not self.is_local_master())
             for step, inputs in enumerate(epoch_iterator):
@@ -289,8 +307,8 @@ class ExtendedTrainer(Trainer):
             depicted_loss = (tr_loss - prev_loss) / self.args.logging_steps
             prev_loss = tr_loss
             list_losses.append(depicted_loss)
-            plt.plot(list_losses, label='current loss')
-            plt.show()
+            # plt.plot(list_losses, label='current loss')
+            # plt.show()
 
             model.eval()
             text = "<|startoftext|>#"
@@ -322,20 +340,53 @@ class ExtendedTrainer(Trainer):
 
             logger.info("------------------------------------------ Metrics ------------------------------------------")
 
-            no_repeat_vals = len(decoded_outputs) - len(set(decoded_outputs))
-            if no_repeat_vals != 0:
-                logger.info("%d generated sentences are repeated in this batch", no_repeat_vals)
+            dict_metrics_epoch = overfit_count(decoded_outputs, train_data, data_base)
 
-            match_tuple = db_match(decoded_outputs, preprocessed_list_train_file)
-            logger.info("%f generated strings match the ones from the training data", match_tuple[0])
-            # print(str(match_tuple[0]) + " generated strings match the ones from the training data")
-            if len(match_tuple[1]) != 0:
-                logger.info("These items occur in both the training and generated datasets with the following labels "
-                            "in the training dataset:")
-                # print("The following items occur in both the training and generated datasets:")
-                for item in match_tuple[1]:
-                    logger.info(list_train_file[preprocessed_list_train_file.index(item)])
-                    # print(item)
+            metric_overfit_items.append(dict_metrics_epoch["overfit_items"])
+            metric_overfit_sentences.append(dict_metrics_epoch["overfit_sentences"])
+            metric_classification_overfit_items.append(dict_metrics_epoch["classification_overfit_items"])
+            metric_classification_overfit_sentences.append(dict_metrics_epoch["classification_overfit_sentences"])
+            metric_classification_labels.append(dict_metrics_epoch["classification_labels"])
+            metric_classification_F_score.append(dict_metrics_epoch["classification_F_score"])
+
+            fig = plt.figure()
+            ax0 = plt.subplot2grid((2, 2), (0, 0), rowspan=1, colspan=2, title="Loss function")
+            ax1 = plt.subplot2grid((2, 2), (1, 0), rowspan=1, colspan=1, title="Overfit metrics")
+            ax2 = plt.subplot2grid((2, 2), (1, 1), rowspan=1, colspan=1, title="Classification metrics")
+
+            ax0.plot(list_losses)
+
+            ax1.plot(metric_overfit_items)
+            ax1.plot(metric_overfit_sentences)
+            ax1.legend(["Overfited items", "Overfited sentences"])
+
+            ax2.plot(metric_classification_overfit_items)
+            ax2.plot(metric_classification_overfit_sentences)
+            ax2.plot(metric_classification_labels)
+            ax2.plot(metric_classification_F_score)
+            ax2.legend(["Overfited items", "Overfited sentences", "Overfited labels", "F score"])
+
+            plt.tight_layout()
+            plt_name = output_dir + "/model_preformace.png"
+            plt.savefig(plt_name)
+            plt.show()
+
+            # Todo to be depricated
+            # no_repeat_vals = len(decoded_outputs) - len(set(decoded_outputs))
+            # if no_repeat_vals != 0:
+            #     logger.info("%d generated sentences are repeated in this batch", no_repeat_vals)
+            #
+            # match_tuple = db_match(decoded_outputs, preprocessed_list_train_file)
+            # logger.info("%f generated strings match the ones from the training data", match_tuple[0])
+            # # print(str(match_tuple[0]) + " generated strings match the ones from the training data")
+            # if len(match_tuple[1]) != 0:
+            #     logger.info("These items occur in both the training and generated datasets with the following labels "
+            #                 "in the training dataset:")
+            #     # print("The following items occur in both the training and generated datasets:")
+            #     for item in match_tuple[1]:
+            #         logger.info(list_train_file[preprocessed_list_train_file.index(item)])
+            #         # print(item)
+            # Todo to be depricated
 
             if 0 < self.args.max_steps < self.global_step:
                 train_iterator.close()
@@ -380,7 +431,7 @@ def get_dataset(args: DataTrainingArguments, tokenizer: PreTrainedTokenizer, eva
         return TextDataset(tokenizer=tokenizer, file_path=file_path, block_size=args.block_size)
 
 
-def train_GPT2(model_name_or_path, train_data_file, output_dir, config_name=None, cache_dir=None, line_by_line=True,
+def train_GPT2(model_name_or_path, train_data, data_base, output_dir, config_name=None, cache_dir=None, line_by_line=True,
                block_size=-1,
                overwrite_cache=False, overwrite_output_dir=False, do_train=False, per_gpu_train_batch_size=8,
                gradient_accumulation_steps=1, learning_rate=5e-5, weight_decay=0.0, adam_epsilon=1e-8,
@@ -397,7 +448,8 @@ def train_GPT2(model_name_or_path, train_data_file, output_dir, config_name=None
                                     gpt2-medium – 24-layer, 1024-hidden, 16-heads, 345M parameters, English
                                     gpt2-large – 36-layer, 1280-hidden, 20-heads, 774M parameters, English
                                     gpt2-xl – 48-layer, 1600-hidden, 25-heads, 1558M parameters, English
-    :param train_data_file: str, data argument, the input training data file (a text file)
+    :param train_data: str, data argument, the input training data file (a text file)
+    :param data_base: Todo
     :param config_name: str, model argument, optional, pretrained config name or path if not the same as model_name
     :param cache_dir: str, model argument, optional, where do you want to store the pretrained models downloaded from s3
     :param line_by_line: bool, data argument, default to True, whether distinct lines of text in the dataset are to be
@@ -441,6 +493,21 @@ def train_GPT2(model_name_or_path, train_data_file, output_dir, config_name=None
     """
     # Todo: try to add do_eval
     model_args = ModelArguments(model_name_or_path, config_name, cache_dir)
+
+    train_data_file = ""
+    # Todo get the train_data_file
+    if type(train_data) == str:
+        train_data_file = train_data
+    else:
+        train_data_file = output_dir + "GPT2_train_data.txt"
+        df_mongoDB_train = pd.DataFrame(list(train_data.find()))
+        list_mongoDB_train = df_mongoDB_train["training_data"].tolist()
+        f = open(train_data_file, 'w')
+        for item in list_mongoDB_train:
+            f.write(item + '\n')
+
+        f.close()
+
     data_args = DataTrainingArguments(train_data_file, line_by_line, block_size, overwrite_cache)
     training_args = TrainingArguments(output_dir=output_dir, overwrite_output_dir=overwrite_output_dir,
                                       do_train=do_train,
@@ -520,7 +587,8 @@ def train_GPT2(model_name_or_path, train_data_file, output_dir, config_name=None
     # Training
     if training_args.do_train:
         model_path = model_args.model_name_or_path
-        trainer.train(tokenizer, train_data_file, model_path=model_path)
+        # Todo the signature has changed!
+        trainer.train(tokenizer, train_data, data_base, output_dir, model_path=model_path)
         trainer.save_model()
         # For convenience, we also re-save the tokenizer to the same directory,
         # so that you can share your model easily on huggingface.co/models =)
@@ -531,10 +599,15 @@ def train_GPT2(model_name_or_path, train_data_file, output_dir, config_name=None
         if trainer.is_world_master():
             tokenizer.save_pretrained(training_args.output_dir)
 
+    os.remove(train_data_file)
+
     return None
 
 
 def prompt_GPT2(train_data_file, model_dir, prompt_text, max_length, top_k, top_p, num_return_sequences, output_name):
+
+    # Todo get rid of the train_data_file
+
     logging.basicConfig(level=logging.INFO)
 
     f = open(train_data_file, 'r+', encoding="utf-8")
@@ -552,7 +625,7 @@ def prompt_GPT2(train_data_file, model_dir, prompt_text, max_length, top_k, top_
     indexed_tokens = tokenizer.encode(prompt_text, return_tensors='pt')
     indexed_tokens = indexed_tokens.to('cuda')
 
-    logging.info('     Generating items for the follwoing prompt sentence: %s', prompt_text)
+    logging.info('     Generating items for the following prompt sentence: %s', prompt_text)
 
     # Todo change to args
     sample_outputs = model.generate(indexed_tokens,

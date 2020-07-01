@@ -2,7 +2,93 @@ import re
 import pandas as pd
 from sklearn.preprocessing import MultiLabelBinarizer
 import numpy as np
+import edlib
 
+
+def convert_into_training_file(df_to_convert):
+
+    list_converted = []
+
+    for index, row in df_to_convert.iterrows():
+        str_temp = "<|startoftext|>"
+        for label in row["label"]:
+            str_temp = str_temp + "#" + label
+        str_temp = str_temp + "@" + row["text"] + "<|endoftext|>"
+        list_converted.append(str_temp)
+
+    return list_converted
+
+
+def F_score_item(list_actual, list_target):
+
+    num_correctly_predicted = len(set(list_actual) & set(list_target))
+    F_score = num_correctly_predicted/(len(list_actual) + len(list_target))
+
+    return F_score
+
+
+def preprocess_generated_items(list_generated_items):
+    """
+    Todo
+    :param list_generated_items:
+    :return:
+    """
+
+    list_items = []
+    list_labels = []
+
+    for item in list_generated_items:
+        item = re.sub('\<\|startoftext\|\>#', '', item)
+        item = re.sub('\<\|endoftext\|\>', '', item)
+        if item.find("@") != -1:
+            list_splited_str = item.split("@")
+            list_items.append(list_splited_str[1])
+            list_labels.append(list_splited_str[0].split("#"))
+        else:
+            list_items.append(item)
+            list_labels.append([""])
+
+    dict_generated_items = {"items": list_items, "labels": list_labels}
+
+    return dict_generated_items
+
+
+def levenshtein_distance(obj1, obj2):
+    # Calculates the normalized Levenshtein distance as a similarity metrics between two strings
+
+    # Parameters:
+    #    obj1 (str):String or list
+    #    obj2 (str):String or list
+
+    # Returns:
+    #    Inverted, normalized Levenshtein distance, whereas 1 = identical match
+    obj1 = ''.join(obj1)
+    obj2 = ''.join(obj2)
+    x = edlib.align(obj1, obj2)
+
+    normalized_distance = 1 - (x['editDistance'] / max(len(obj1), len(obj2)))
+
+    return normalized_distance
+
+
+def compare_obj(obj1, obj2, dichotomous=True):
+    obj1 = [obj1] if isinstance(obj1, str) else obj1
+    obj2 = [obj2] if isinstance(obj2, str) else obj2
+    if not isinstance(obj1, list) or not isinstance(obj2, list):
+        print('Error: `obj1` and obj2 must be strings or lists but are `', type(obj1), '` and `', type(obj2), '`!')
+        return False
+
+    if dichotomous:
+        similarity = 1 if len([i for i in obj1 if i in obj2]) > 0 else 0
+    else:
+        similarity = min([levenshtein_distance(i, obj2) for i in obj1])
+
+    result = {
+        'stems': obj1,
+        'similarity': similarity
+    }
+
+    return result
 
 def preprocess_db(db_list):
     """
