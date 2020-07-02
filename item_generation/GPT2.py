@@ -100,7 +100,7 @@ class ExtendedTrainer(Trainer):
     # global_step: Optional[int] = None
     # epoch: Optional[float] = None
 
-    def train(self, tokenizer, train_data, data_base, output_dir, model_path: Optional[str] = None):
+    def train(self, tokenizer, train_data, data_base, model_path: Optional[str] = None):
         """
         Main training entry point.
         Args:
@@ -354,7 +354,7 @@ class ExtendedTrainer(Trainer):
             ax2.legend(["Overfited items", "Overfited sentences", "Overfited labels", "F score"])
 
             plt.tight_layout()
-            plt_name = output_dir + "/model_preformace.png"
+            plt_name = self.args.output_dir + "/model_preformace.png"
             plt.savefig(plt_name)
             plt.show()
 
@@ -486,7 +486,7 @@ def train_GPT2(model_name_or_path, train_data, data_base, output_dir, config_nam
     if type(train_data) == str:
         train_data_file = train_data
     else:
-        train_data_file = output_dir + "/GPT2_train_data.txt"
+        train_data_file = output_dir + "GPT2_train_data.txt"
         df_mongoDB_train = pd.DataFrame(list(train_data.find()))
         list_mongoDB_train = df_mongoDB_train["training_data"].tolist()
         f = open(train_data_file, 'w')
@@ -575,7 +575,7 @@ def train_GPT2(model_name_or_path, train_data, data_base, output_dir, config_nam
     if training_args.do_train:
         model_path = model_args.model_name_or_path
         # Todo the signature has changed!
-        trainer.train(tokenizer, train_data, data_base, output_dir, model_path=model_path)
+        trainer.train(tokenizer, train_data, data_base, model_path=model_path)
         trainer.save_model()
         # For convenience, we also re-save the tokenizer to the same directory,
         # so that you can share your model easily on huggingface.co/models =)
