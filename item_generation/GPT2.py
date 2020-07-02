@@ -35,7 +35,7 @@ from transformers import (
 from transformers.data.data_collator import DataCollator
 from transformers.modeling_utils import PreTrainedModel
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR, EvalPrediction, TrainOutput
-from transformers.training_args import TrainingArguments
+from transformers.training_args import TrainingArguments, is_tpu_available
 
 from typing import Callable, Dict, Optional, Tuple
 
@@ -69,6 +69,11 @@ except ImportError:
 def is_apex_available():
     return _has_apex
 
+
+if is_tpu_available():
+    import torch_xla.core.xla_model as xm
+    import torch_xla.debug.metrics as met
+    import torch_xla.distributed.parallel_loader as pl
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -176,11 +181,14 @@ class ExtendedTrainer(Trainer):
             self.tb_writer.add_hparams(self.args.to_sanitized_dict(), metric_dict={})
 
         # Train!
-        total_train_batch_size = (
-            self.args.train_batch_size
-            * self.args.gradient_accumulation_steps
-            * (torch.distributed.get_world_size() if self.args.local_rank != -1 else 1))
-
+        if is_tpu_available():
+            total_train_batch_size = self.args.train_batch_size * xm.xrt_world_size()
+        else:
+            total_train_batch_size = (
+                self.args.train_batch_size
+                * self.args.gradient_accumulation_steps
+                * (torch.distributed.get_world_size() if self.args.local_rank != -1 else 1)
+            )
         logger.info("***** Running training *****")
         logger.info("  Num examples = %d", self.num_examples(train_dataloader))
         logger.info("  Num Epochs = %d", num_train_epochs)
@@ -250,7 +258,10 @@ class ExtendedTrainer(Trainer):
                     else:
                         torch.nn.utils.clip_grad_norm_(model.parameters(), self.args.max_grad_norm)
 
-                    optimizer.step()
+                    if is_tpu_available():
+                        xm.optimizer_step(optimizer)
+                    else:
+                        optimizer.step()
 
                     scheduler.step()
                     model.zero_grad()
