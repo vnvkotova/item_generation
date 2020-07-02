@@ -499,7 +499,7 @@ def train_GPT2(model_name_or_path, train_data, data_base, output_dir, config_nam
     if type(train_data) == str:
         train_data_file = train_data
     else:
-        train_data_file = output_dir + "GPT2_train_data.txt"
+        train_data_file = output_dir + "/GPT2_train_data.txt"
         df_mongoDB_train = pd.DataFrame(list(train_data.find()))
         list_mongoDB_train = df_mongoDB_train["training_data"].tolist()
         f = open(train_data_file, 'w')
