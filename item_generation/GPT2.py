@@ -35,7 +35,7 @@ from transformers import (
 from transformers.data.data_collator import DataCollator
 from transformers.modeling_utils import PreTrainedModel
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR, EvalPrediction, TrainOutput
-from transformers.training_args import TrainingArguments, is_tpu_available
+from transformers.training_args import TrainingArguments
 
 from typing import Callable, Dict, Optional, Tuple
 
@@ -69,11 +69,6 @@ except ImportError:
 def is_apex_available():
     return _has_apex
 
-
-if is_tpu_available():
-    import torch_xla.core.xla_model as xm
-    import torch_xla.debug.metrics as met
-    import torch_xla.distributed.parallel_loader as pl
 
 try:
     from torch.utils.tensorboard import SummaryWriter
