@@ -10,7 +10,6 @@ from tqdm import tqdm, trange
 import sys
 import random
 import numpy as np
-import apex
 from sklearn.model_selection import train_test_split
 
 import logging
