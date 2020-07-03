@@ -42,8 +42,7 @@ def preprocess_generated_items(list_generated_items):
         item = re.sub('\<\|endoftext\|\>', '', item)
         if item.find("@") != -1:
             list_splited_str = item.split("@")
-            item_with_dot = list_splited_str[1] + "."
-            list_items.append(item_with_dot)
+            list_items.append(list_splited_str[1][:-1])
             list_labels.append(list_splited_str[0].split("#"))
         else:
             list_items.append(item)
