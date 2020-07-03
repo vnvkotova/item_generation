@@ -46,7 +46,7 @@ def preprocess_generated_items(list_generated_items):
             list_labels.append(list_splited_str[0].split("#"))
         else:
             list_items.append(item)
-            list_labels.append("")
+            list_labels.append([""])
 
     dict_generated_items = {"items": list_items, "labels": list_labels}
 
