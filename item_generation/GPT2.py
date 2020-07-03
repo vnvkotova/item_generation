@@ -128,7 +128,7 @@ class ExtendedTrainer(Trainer):
         # df_aggregated_written = pd.read_excel(path_database)
 
         train_dataloader = self.get_train_dataloader()
-        num_train_epochs = 0
+        logger.info("The length of the train_dataloader is %d", len(train_dataloader))
         if self.args.max_steps > 0:
             t_total = self.args.max_steps
             num_train_epochs = (
@@ -494,6 +494,9 @@ def train_GPT2(model_name_or_path, train_data, data_base, output_dir, config_nam
             f.write(item + '\n')
 
         f.close()
+
+    logging.info('Passing the following training file to the trainer: %s', train_data_file)
+
 
     data_args = DataTrainingArguments(train_data_file, line_by_line, block_size, overwrite_cache)
     training_args = TrainingArguments(output_dir=output_dir, overwrite_output_dir=overwrite_output_dir,
