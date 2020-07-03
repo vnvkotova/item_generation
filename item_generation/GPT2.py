@@ -128,7 +128,7 @@ class ExtendedTrainer(Trainer):
         # df_aggregated_written = pd.read_excel(path_database)
 
         train_dataloader = self.get_train_dataloader()
-        logger.info("The length of the train_dataloader is %d", len(train_dataloader))
+
         if self.args.max_steps > 0:
             t_total = self.args.max_steps
             num_train_epochs = (

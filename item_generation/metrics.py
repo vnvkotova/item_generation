@@ -17,7 +17,7 @@ def overfit_count(list_decoded_outputs, train_data, data_base):
 
     dict_generated_items = preprocess_generated_items(list_decoded_outputs)
 
-    current_num = 0.0
+    current_num = 0
 
     # these are metrics to measure the generation overfit
     # evaluate items overfit via Levenshtein distance
