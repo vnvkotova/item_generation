@@ -59,7 +59,7 @@ def overfit_count(list_decoded_outputs, train_data, data_base):
                 # list_classification_num_overfit_items_labels.append(1)
                 num_classification_num_overfit_items_labels = num_classification_num_overfit_items_labels + 1.0
             # else if list for the generated item is a subset
-            elif set(dict_generated_items["labels"]) <= set(database_item["label"]):
+            elif set(dict_generated_items["labels"][current_num]) <= set(database_item["label"]):
                 # list_classification_num_overfit_correct_labels.append(1)
                 num_classification_num_overfit_correct_labels = num_classification_num_overfit_correct_labels + 1.0
             # else
