@@ -2,6 +2,7 @@ from item_generation.utils import preprocess_generated_list, compare_obj, prepro
 import numpy as np
 from torch import Tensor
 import edlib
+import re
 
 
 def overfit_count(list_decoded_outputs, train_data, data_base):
@@ -44,10 +45,20 @@ def overfit_count(list_decoded_outputs, train_data, data_base):
             # list_overfit_items.append(1)
             num_overfit_items = num_overfit_items + 1.0
             # if the whole sentence is in training data
-            training_item = train_data.find_one({"training_data": list_decoded_outputs[current_num]})
-            if training_item != None:
+            print("sentence decoded: ", list_decoded_outputs[current_num])
+            sentence_wo_eos_bos = re.sub('\<\|startoftext\|\>', '', database_item["training_data"])
+            sentence_wo_eos_bos = re.sub('\<\|endoftext\|\>', '', sentence_wo_eos_bos)
+            # database_item["training_data"] == list_decoded_outputs[current_num]
+            # training_item = train_data.find_one({"training_data": list_decoded_outputs[current_num]})
+            if sentence_wo_eos_bos == list_decoded_outputs[current_num]:
                 # list_overfit_sentence.append(1)
                 num_overfit_sentences = num_overfit_sentences + 1.0
+                print("As the sentences are exactly the same, let me see how the corresponding label lists"
+                      "are doing")
+                print("dict_generated_items[\"labels\"][current_num] is ", dict_generated_items["labels"][current_num])
+                print("database_item[\"label\"] is ", database_item["label"])
+                temp_bool = set(dict_generated_items["labels"][current_num]) == set(database_item["label"])
+                print("The set comparisson tells me: ", temp_bool)
             # list_classification_num_overfit_items.append(1)
             num_classification_num_overfit_items = num_classification_num_overfit_items + 1
             # if dict_generated_items["labels"] == dict_db["labels"]
