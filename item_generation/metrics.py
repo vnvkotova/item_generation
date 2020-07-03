@@ -38,12 +38,9 @@ def overfit_count(list_decoded_outputs, train_data, data_base):
 
     for item in dict_generated_items["items"]:
 
-        print("The current item being checked", item)
-
         # if the item is in training data
         database_item = train_data.find_one({"text": item})
-        if database_item != None:
-            print("I seem not to be getting here):")
+        if database_item is not None:
             # list_overfit_items.append(1)
             num_overfit_items = num_overfit_items + 1.0
             # if the whole sentence is in training data
