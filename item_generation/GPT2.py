@@ -100,7 +100,7 @@ class ExtendedTrainer(Trainer):
     # global_step: Optional[int] = None
     # epoch: Optional[float] = None
 
-    def train(self, tokenizer, train_data, data_base, model_path: Optional[str] = None):
+    def train(self, tokenizer, train_data, data_base, num_val_items, model_path: Optional[str] = None):
         """
         Main training entry point.
         Args:
@@ -222,6 +222,8 @@ class ExtendedTrainer(Trainer):
 
         metric_overfit_items = []
         metric_overfit_sentences = []
+        metric_overfit_repeated_items = []
+        metric_overfit_repeated_sentences = []
         metric_classification_overfit_items = []
         metric_classification_overfit_sentences = []
         metric_classification_labels = []
@@ -311,7 +313,7 @@ class ExtendedTrainer(Trainer):
                 max_length=50,
                 top_k=50,
                 top_p=0.50,
-                num_return_sequences=30
+                num_return_sequences=num_val_items
             )
 
             decoded_outputs = []
@@ -331,6 +333,8 @@ class ExtendedTrainer(Trainer):
 
             metric_overfit_items.append(dict_metrics_epoch["overfit_items"])
             metric_overfit_sentences.append(dict_metrics_epoch["overfit_sentences"])
+            metric_overfit_repeated_items.append(dict_metrics_epoch["overfit_repeated_items"])
+            metric_overfit_repeated_sentences.append(dict_metrics_epoch["overfit_repeated_sentences"])
             metric_classification_overfit_items.append(dict_metrics_epoch["classification_overfit_items"])
             metric_classification_overfit_sentences.append(dict_metrics_epoch["classification_overfit_sentences"])
             metric_classification_labels.append(dict_metrics_epoch["classification_labels"])
@@ -345,7 +349,9 @@ class ExtendedTrainer(Trainer):
 
             ax1.plot(metric_overfit_items)
             ax1.plot(metric_overfit_sentences)
-            ax1.legend(["Overfited items", "Overfited sentences"])
+            ax1.plot(metric_overfit_repeated_items)
+            ax1.plot(metric_overfit_repeated_sentences)
+            ax1.legend(["Overfited items", "Overfited sentences", "Repeated items", "Repeated sentences"])
 
             ax2.plot(metric_classification_overfit_items)
             ax2.plot(metric_classification_overfit_sentences)
@@ -385,7 +391,10 @@ class ExtendedTrainer(Trainer):
         if self.tb_writer:
             self.tb_writer.close()
 
-        dict_metrics = {"Overfited_items": metric_overfit_items, "Overfited_sentences": metric_overfit_sentences,
+        dict_metrics = {"Losses": list_losses,
+                        "Overfited_items": metric_overfit_items, "Overfited_sentences": metric_overfit_sentences,
+                        "Overfit_repeated_items": metric_overfit_repeated_items,
+                        "Overfit_repeated_sentences": metric_overfit_repeated_sentences,
                         "Class_overfited_items": metric_classification_overfit_items,
                         "Class_overfited_sentences": metric_classification_overfit_sentences,
                         "Class_overfited_labels": metric_classification_labels,
@@ -427,8 +436,8 @@ def get_dataset(args: DataTrainingArguments, tokenizer: PreTrainedTokenizer, eva
         return TextDataset(tokenizer=tokenizer, file_path=file_path, block_size=args.block_size)
 
 
-def train_GPT2(model_name_or_path, train_data, data_base, output_dir, config_name=None, cache_dir=None, line_by_line=True,
-               block_size=-1,
+def train_GPT2(model_name_or_path, train_data, data_base, output_dir, num_val_items = 30,
+               config_name=None, cache_dir=None, line_by_line=True, block_size=-1,
                overwrite_cache=False, overwrite_output_dir=False, do_train=False, per_gpu_train_batch_size=8,
                gradient_accumulation_steps=1, learning_rate=5e-5, weight_decay=0.0, adam_epsilon=1e-8,
                max_grad_norm=1.0,
@@ -587,7 +596,7 @@ def train_GPT2(model_name_or_path, train_data, data_base, output_dir, config_nam
     if training_args.do_train:
         model_path = model_args.model_name_or_path
         # Todo the signature has changed!
-        trainer.train(tokenizer, train_data, data_base, model_path=model_path)
+        trainer.train(tokenizer, train_data, data_base, num_val_items, model_path=model_path)
         trainer.save_model()
         # For convenience, we also re-save the tokenizer to the same directory,
         # so that you can share your model easily on huggingface.co/models =)

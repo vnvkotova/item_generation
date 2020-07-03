@@ -90,11 +90,17 @@ def overfit_count(list_decoded_outputs, train_data, data_base):
 
         current_num = current_num + 1
 
-    metrics = {"overfit_items": num_overfit_items, "overfit_sentences": num_overfit_sentences,
-               "classification_overfit_items": num_classification_num_overfit_items,
-               "classification_overfit_sentences": num_classification_num_overfit_items_labels,
-               "classification_labels": num_classification_num_overfit_correct_labels,
-               "classification_F_score": num_classification_num_overfit_F_score}
+    overfit_repeated_items = len(dict_generated_items["items"]) - len(set(dict_generated_items["items"]))
+    overfit_repeated_sentences = len(list_decoded_outputs) - len(set(list_decoded_outputs))
+
+    metrics = {"overfit_items": num_overfit_items/len(list_decoded_outputs),
+               "overfit_sentences": num_overfit_sentences/len(list_decoded_outputs),
+               "overfit_repeated_items": overfit_repeated_items/len(list_decoded_outputs),
+               "overfit_repeated_sentences": overfit_repeated_sentences/len(list_decoded_outputs),
+               "classification_overfit_items": num_classification_num_overfit_items/len(list_decoded_outputs),
+               "classification_overfit_sentences": num_classification_num_overfit_items_labels/len(list_decoded_outputs),
+               "classification_labels": num_classification_num_overfit_correct_labels/len(list_decoded_outputs),
+               "classification_F_score": num_classification_num_overfit_F_score/len(list_decoded_outputs)}
 
     return metrics
 
