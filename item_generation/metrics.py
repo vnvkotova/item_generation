@@ -51,8 +51,10 @@ def overfit_count(list_decoded_outputs, train_data, data_base):
             # list_classification_num_overfit_items.append(1)
             num_classification_num_overfit_items = num_classification_num_overfit_items + 1
             # if dict_generated_items["labels"] == dict_db["labels"]
-            print("Tell me the type of dict_generated_items[\"labels\"] please: %s", str(type(dict_generated_items["labels"])))
-            print("Tell me the type of database_item[\"label\"] please: %s", str(type(database_item["label"])))
+            print("Tell me the type of dict_generated_items[\"labels\"] please")
+            print(dict_generated_items["labels"])
+            print("Tell me the type of database_item[\"label\"] please")
+            print(database_item["label"])
             if set(dict_generated_items["labels"]) == set(database_item["label"]):
                 # list_classification_num_overfit_items_labels.append(1)
                 num_classification_num_overfit_items_labels = num_classification_num_overfit_items_labels + 1.0
