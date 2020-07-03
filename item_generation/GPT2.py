@@ -385,6 +385,15 @@ class ExtendedTrainer(Trainer):
         if self.tb_writer:
             self.tb_writer.close()
 
+        dict_metrics = {"Overfited_items": metric_overfit_items, "Overfited_sentences": metric_overfit_sentences,
+                        "Class_overfited_items": metric_classification_overfit_items,
+                        "Class_overfited_sentences": metric_classification_overfit_sentences,
+                        "Class_overfited_labels": metric_classification_labels,
+                        "Class_F_score": metric_classification_F_score}
+        df_metrics = pd.DataFrame(dict_metrics)
+        excel_name = self.args.output_dir + "/metrics.xlsx"
+        df_metrics.to_excel(excel_name)
+
         logger.info("\n\nTraining completed. Do not forget to share your model on huggingface.co/models =)\n\n")
         return TrainOutput(self.global_step, tr_loss / self.global_step)
 
