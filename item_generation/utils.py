@@ -43,7 +43,7 @@ def preprocess_generated_items(list_generated_items):
         if item.find("@") != -1:
             list_splited_str = item.split("@")
             list_items.append(list_splited_str[1][:-1])
-            list_labels.append(list_splited_str[0].split("#"))
+            list_labels.append(list_splited_str[0].split("#")[1:])
         else:
             list_items.append(item)
             list_labels.append([""])
