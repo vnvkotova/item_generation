@@ -53,43 +53,6 @@ def preprocess_generated_items(list_generated_items):
     return dict_generated_items
 
 
-def levenshtein_distance(obj1, obj2):
-    # Calculates the normalized Levenshtein distance as a similarity metrics between two strings
-
-    # Parameters:
-    #    obj1 (str):String or list
-    #    obj2 (str):String or list
-
-    # Returns:
-    #    Inverted, normalized Levenshtein distance, whereas 1 = identical match
-    obj1 = ''.join(obj1)
-    obj2 = ''.join(obj2)
-    x = edlib.align(obj1, obj2)
-
-    normalized_distance = 1 - (x['editDistance'] / max(len(obj1), len(obj2)))
-
-    return normalized_distance
-
-
-def compare_obj(obj1, obj2, dichotomous=True):
-    obj1 = [obj1] if isinstance(obj1, str) else obj1
-    obj2 = [obj2] if isinstance(obj2, str) else obj2
-    if not isinstance(obj1, list) or not isinstance(obj2, list):
-        print('Error: `obj1` and obj2 must be strings or lists but are `', type(obj1), '` and `', type(obj2), '`!')
-        return False
-
-    if dichotomous:
-        similarity = 1 if len([i for i in obj1 if i in obj2]) > 0 else 0
-    else:
-        similarity = min([levenshtein_distance(i, obj2) for i in obj1])
-
-    result = {
-        'stems': obj1,
-        'similarity': similarity
-    }
-
-    return result
-
 def preprocess_db(db_list):
     """
     Todo

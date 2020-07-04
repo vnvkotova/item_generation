@@ -100,7 +100,8 @@ class ExtendedTrainer(Trainer):
     # global_step: Optional[int] = None
     # epoch: Optional[float] = None
 
-    def train(self, tokenizer, train_data, data_base, num_val_items, model_path: Optional[str] = None):
+    def train(self, tokenizer, train_data, data_base, num_val_items, val_top_k, val_top_p,
+              model_path: Optional[str] = None):
         """
         Main training entry point.
         Args:
@@ -303,26 +304,19 @@ class ExtendedTrainer(Trainer):
             text = "<|startoftext|>#"
             indexed_tokens = tokenizer.encode(text, return_tensors='pt')
             indexed_tokens = indexed_tokens.to('cuda')
-            # set top_k = 50 and set top_p = 0.95 and num_return_sequences = 3
-            # set top_k = 40 and set top_p = 0.95 and num_return_sequences = 3
-            # set top_k = 100 and set top_p = 0.95 and num_return_sequences = 3
-            # set top_k = 50 and set top_p = 0.50 and num_return_sequences = 3
             sample_outputs = model.generate(
                 indexed_tokens,
                 do_sample=True,
                 max_length=50,
-                top_k=50,
-                top_p=0.50,
+                top_k=val_top_k,
+                top_p=val_top_p,
                 num_return_sequences=num_val_items
             )
 
             decoded_outputs = []
 
-            # print("Output:\n" + 100 * '-')
             for i, sample_output in enumerate(sample_outputs):
                 temp_sentence = tokenizer.decode(sample_output, skip_special_tokens=True)
-                # if i < 3:
-                #     print("{}: {}".format(i, temp_sentence))
                 logger.info(temp_sentence)
                 decoded_outputs.append(temp_sentence)
             model.train()
@@ -363,23 +357,6 @@ class ExtendedTrainer(Trainer):
             plt_name = self.args.output_dir + "/model_preformace.png"
             plt.savefig(plt_name)
             plt.show()
-
-            # Todo to be depricated
-            # no_repeat_vals = len(decoded_outputs) - len(set(decoded_outputs))
-            # if no_repeat_vals != 0:
-            #     logger.info("%d generated sentences are repeated in this batch", no_repeat_vals)
-            #
-            # match_tuple = db_match(decoded_outputs, preprocessed_list_train_file)
-            # logger.info("%f generated strings match the ones from the training data", match_tuple[0])
-            # # print(str(match_tuple[0]) + " generated strings match the ones from the training data")
-            # if len(match_tuple[1]) != 0:
-            #     logger.info("These items occur in both the training and generated datasets with the following labels "
-            #                 "in the training dataset:")
-            #     # print("The following items occur in both the training and generated datasets:")
-            #     for item in match_tuple[1]:
-            #         logger.info(list_train_file[preprocessed_list_train_file.index(item)])
-            #         # print(item)
-            # Todo to be depricated
 
             if 0 < self.args.max_steps < self.global_step:
                 train_iterator.close()
@@ -436,7 +413,7 @@ def get_dataset(args: DataTrainingArguments, tokenizer: PreTrainedTokenizer, eva
         return TextDataset(tokenizer=tokenizer, file_path=file_path, block_size=args.block_size)
 
 
-def train_GPT2(model_name_or_path, train_data, data_base, output_dir, num_val_items = 30,
+def train_GPT2(model_name_or_path, train_data, data_base, output_dir, num_val_items = 30, val_top_k=30, val_top_p=0.95,
                config_name=None, cache_dir=None, line_by_line=True, block_size=-1,
                overwrite_cache=False, overwrite_output_dir=False, do_train=False, per_gpu_train_batch_size=8,
                gradient_accumulation_steps=1, learning_rate=5e-5, weight_decay=0.0, adam_epsilon=1e-8,
@@ -568,13 +545,7 @@ def train_GPT2(model_name_or_path, train_data, data_base, output_dir, num_val_it
         config = AutoConfig.from_pretrained(model_args.model_name_or_path, cache_dir=model_args.cache_dir)
 
     tokenizer = GPT2Tokenizer.from_pretrained(model_name_or_path, bos_token=bos_token)
-    # tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path, cache_dir=model_args.cache_dir)
 
-    # model = AutoModelWithLMHead.from_pretrained(
-    #         model_args.model_name_or_path,
-    #         from_tf=bool(".ckpt" in model_args.model_name_or_path),
-    #         config=config,
-    #         cache_dir=model_args.cache_dir,)
     model = GPT2LMHeadModel.from_pretrained(model_name_or_path)
 
     if data_args.block_size <= 0:
@@ -596,7 +567,7 @@ def train_GPT2(model_name_or_path, train_data, data_base, output_dir, num_val_it
     if training_args.do_train:
         model_path = model_args.model_name_or_path
         # Todo the signature has changed!
-        trainer.train(tokenizer, train_data, data_base, num_val_items, model_path=model_path)
+        trainer.train(tokenizer, train_data, data_base, num_val_items, val_top_k, val_top_p, model_path=model_path)
         trainer.save_model()
         # For convenience, we also re-save the tokenizer to the same directory,
         # so that you can share your model easily on huggingface.co/models =)

@@ -6,15 +6,13 @@ import re
 
 
 def overfit_count(list_decoded_outputs, train_data, data_base):
-
-    # Go through each newly generated item
-
-    # If item is in db, then divergence = 1
-        # Check the labels, if the
-
-    # Currently: if items are the same they get 1!
-
-    # Todo: should return a dictionary entry for the current epoch with one single value for every metric
+    """
+    Todo
+    :param list_decoded_outputs:
+    :param train_data:
+    :param data_base:
+    :return:
+    """
 
     dict_generated_items = preprocess_generated_items(list_decoded_outputs)
 
@@ -45,27 +43,14 @@ def overfit_count(list_decoded_outputs, train_data, data_base):
             # list_overfit_items.append(1)
             num_overfit_items = num_overfit_items + 1.0
             # if the whole sentence is in training data
-            print("sentence decoded: ", list_decoded_outputs[current_num])
             sentence_wo_eos_bos = re.sub('\<\|startoftext\|\>', '', database_item["training_data"])
             sentence_wo_eos_bos = re.sub('\<\|endoftext\|\>', '', sentence_wo_eos_bos)
-            # database_item["training_data"] == list_decoded_outputs[current_num]
-            # training_item = train_data.find_one({"training_data": list_decoded_outputs[current_num]})
             if sentence_wo_eos_bos == list_decoded_outputs[current_num]:
                 # list_overfit_sentence.append(1)
                 num_overfit_sentences = num_overfit_sentences + 1.0
-                print("As the sentences are exactly the same, let me see how the corresponding label lists"
-                      "are doing")
-                print("dict_generated_items[\"labels\"][current_num] is ", dict_generated_items["labels"][current_num])
-                print("database_item[\"label\"] is ", database_item["label"])
-                temp_bool = set(dict_generated_items["labels"][current_num]) == set(database_item["label"])
-                print("The set comparisson tells me: ", temp_bool)
             # list_classification_num_overfit_items.append(1)
             num_classification_num_overfit_items = num_classification_num_overfit_items + 1
             # if dict_generated_items["labels"] == dict_db["labels"]
-            # print("Tell me the type of dict_generated_items[\"labels\"] please")
-            # print(dict_generated_items["labels"])
-            # print("Tell me the type of database_item[\"label\"] please")
-            # print(database_item["label"])
             if set(dict_generated_items["labels"][current_num]) == set(database_item["label"]):
                 # list_classification_num_overfit_items_labels.append(1)
                 num_classification_num_overfit_items_labels = num_classification_num_overfit_items_labels + 1.0
@@ -79,7 +64,6 @@ def overfit_count(list_decoded_outputs, train_data, data_base):
                 num_classification_num_overfit_F_score = num_classification_num_overfit_F_score + \
                                                          F_score_item(dict_generated_items["labels"][current_num],
                                                                       database_item["label"])
-
         # else
         else:
             # list_overfit_items.append(Levenshtein_distance)
@@ -115,60 +99,6 @@ def overfit_count(list_decoded_outputs, train_data, data_base):
 
     return metrics
 
-
-def add_overfit_count(parsed_output, parsed_input, dichotomous=True):
-    """Summary or Description of the Function
-    TODO
-    Parameters:
-    param (type): MISSING DESC
-
-    Returns:
-    list:MISSING DESC
-
-    """
-
-    parsed_output = [parsed_output] if not isinstance(parsed_output, list) else parsed_output
-
-    # Todo: the following is only temporarily needed
-    # parsed_output - list of all entries for all epochs?
-    # output_item - list of entries as in the log file which Björn shared with me, an element of output_entry['items']
-    for output_entry in parsed_output:
-        for output_item in output_entry['items']:
-            divergent_matches = []
-            convergent_matches = []
-
-            for input_entry in parsed_input:
-                divergent_match = compare_obj(input_entry['stems'], output_item['stems'], dichotomous=dichotomous)
-                divergent_matches.append(divergent_match)
-
-                # Todo: does Björn have only 1 construct per item???
-                if input_entry['constructs'] == output_item['constructs']:
-                    convergent_match = compare_obj(input_entry['stems'], output_item['stems'], dichotomous=dichotomous)
-                    convergent_matches.append(convergent_match)
-                else:
-                    convergent_matches.append({'stems': None, 'similarity': 0})
-
-            divergent_similarity_max = max([i['similarity'] for i in divergent_matches])
-            output_item['divergent_similarity'] = divergent_similarity_max
-
-            if not dichotomous:
-                divergent_top_matches = list(
-                    filter(lambda x: x['similarity'] == divergent_similarity_max, divergent_matches))
-                output_item['divergent_matches'] = [i['stems'] for i in divergent_top_matches]
-            else:
-                output_item['divergent_matches'] = None
-
-            convergent_similarity_max = max([i['similarity'] for i in convergent_matches])
-            output_item['convergent_similarity'] = convergent_similarity_max
-
-            if convergent_similarity_max and not dichotomous:
-                convergent_top_matches = list(
-                    filter(lambda x: x['similarity'] == convergent_similarity_max, convergent_matches))
-                output_item['convergent_matches'] = [i['stems'] for i in convergent_top_matches]
-            else:
-                output_item['convergent_matches'] = None
-
-    return parsed_output
 
 def db_match(list_generated, list_db):
     """
