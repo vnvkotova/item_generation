@@ -1,4 +1,4 @@
-from item_generation.utils import preprocess_generated_list, compare_obj, preprocess_generated_items, F_score_item
+from item_generation.utils import preprocess_generated_list, preprocess_generated_items, F_score_item
 import numpy as np
 from torch import Tensor
 import edlib
