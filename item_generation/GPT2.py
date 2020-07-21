@@ -236,14 +236,14 @@ class ExtendedTrainer(Trainer):
 
         list_training_items = []
         for document in train_data.find():
-            list_training_items.append(document["text"])
+            list_training_items.append(document["augmented_item"])
         list_training_items = list(set(list_training_items))
 
         list_library_items = None
         if data_base is not None:
             list_library_items = []
             for document in data_base.find():
-                list_library_items.append(document["text"])
+                list_library_items.append(document["augmented_item"])
             list_library_items = list(set(list_library_items)-set(list_training_items))
 
         for epoch in train_iterator:

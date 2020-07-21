@@ -49,7 +49,7 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
             # if the item is in training data
             if item in list_training_items:
 
-                database_item = train_data.find_one({"text": item})
+                database_item = train_data.find_one({"augmented_item": item})
 
                 # list_overfit_items.append(1)
                 num_overfit_items = num_overfit_items + 1.0
@@ -81,8 +81,8 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
                 list_Levenshtein_metrics = []
                 list_Levenshtein_metrics_sentences = []
                 for valid_item in train_data.find():
-                    item_metrics = edlib.align(item, valid_item["text"])
-                    normalized_distance = 1 - (item_metrics['editDistance'] / max(len(item), len(valid_item["text"])))
+                    item_metrics = edlib.align(item, valid_item["augmented_item"])
+                    normalized_distance = 1 - (item_metrics['editDistance'] / max(len(item), len(valid_item["initial_item"])))
                     list_Levenshtein_metrics.append(normalized_distance)
 
                     # list_overfit_sentence.append(Levenshtein_distance)
@@ -92,7 +92,7 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
                     list_Levenshtein_metrics_sentences.append(normalized_distance)
 
                 if item in list_library_items:
-                    library_item = library.find_one({"text": item})
+                    library_item = library.find_one({"augmented_item": item})
 
                     num_library_items = num_library_items + 1.0
                     num_classification_library_F_score = num_classification_library_F_score + \
@@ -124,7 +124,7 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
             # if the item is in training data
             if item in list_training_items:
 
-                database_item = train_data.find_one({"text": item})
+                database_item = train_data.find_one({"augmented_item": item})
 
                 # list_overfit_items.append(1)
                 num_overfit_items = num_overfit_items + 1.0
@@ -156,8 +156,8 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
                 list_Levenshtein_metrics = []
                 list_Levenshtein_metrics_sentences = []
                 for valid_item in train_data.find():
-                    item_metrics = edlib.align(item, valid_item["text"])
-                    normalized_distance = 1 - (item_metrics['editDistance'] / max(len(item), len(valid_item["text"])))
+                    item_metrics = edlib.align(item, valid_item["augmented_item"])
+                    normalized_distance = 1 - (item_metrics['editDistance'] / max(len(item), len(valid_item["augmented_item"])))
                     list_Levenshtein_metrics.append(normalized_distance)
 
                     # list_overfit_sentence.append(Levenshtein_distance)
