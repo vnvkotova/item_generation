@@ -231,6 +231,21 @@ class ExtendedTrainer(Trainer):
         metric_classification_F_score = []
         current_epoch = 0
 
+        metric_library_items = []
+        metric_classification_library_F_score = []
+
+        list_training_items = []
+        for document in train_data.find():
+            list_training_items.append(document["text"])
+        list_training_items = list(set(list_training_items))
+
+        list_library_items = None
+        if data_base is not None:
+            list_library_items = []
+            for document in data_base.find():
+                list_library_items.append(document["text"])
+            list_library_items = list(set(list_library_items)-set(list_training_items))
+
         for epoch in train_iterator:
             epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=not self.is_local_master())
             for step, inputs in enumerate(epoch_iterator):
@@ -323,7 +338,7 @@ class ExtendedTrainer(Trainer):
 
             logger.info("------------------------------------------ Metrics ------------------------------------------")
 
-            dict_metrics_epoch = overfit_count(decoded_outputs, train_data, data_base)
+            dict_metrics_epoch = overfit_count(decoded_outputs, train_data, list_training_items, data_base, list_library_items)
 
             metric_overfit_items.append(dict_metrics_epoch["overfit_items"])
             metric_overfit_sentences.append(dict_metrics_epoch["overfit_sentences"])
@@ -335,23 +350,53 @@ class ExtendedTrainer(Trainer):
             metric_classification_F_score.append(dict_metrics_epoch["classification_F_score"])
 
             fig = plt.figure()
-            ax0 = plt.subplot2grid((2, 2), (0, 0), rowspan=1, colspan=2, title="Loss function")
-            ax1 = plt.subplot2grid((2, 2), (1, 0), rowspan=1, colspan=1, title="Overfit metrics")
-            ax2 = plt.subplot2grid((2, 2), (1, 1), rowspan=1, colspan=1, title="Classification metrics")
+            fig.set_size_inches(12, 12)
 
-            ax0.plot(list_losses)
+            if data_base is not None:
 
-            ax1.plot(metric_overfit_items)
-            ax1.plot(metric_overfit_sentences)
-            ax1.plot(metric_overfit_repeated_items)
-            ax1.plot(metric_overfit_repeated_sentences)
-            ax1.legend(["Overfited items", "Overfited sentences", "Repeated items", "Repeated sentences"])
+                metric_library_items.append(dict_metrics_epoch["library_items"])
+                metric_classification_library_F_score.append(dict_metrics_epoch["classification_library_F_score"])
 
-            ax2.plot(metric_classification_overfit_items)
-            ax2.plot(metric_classification_overfit_sentences)
-            ax2.plot(metric_classification_labels)
-            ax2.plot(metric_classification_F_score)
-            ax2.legend(["Overfited items", "Overfited sentences", "Overfited labels", "F score"])
+                ax0 = plt.subplot2grid((3, 2), (0, 0), rowspan=1, colspan=2, title="Loss function")
+                ax1 = plt.subplot2grid((3, 2), (1, 0), rowspan=1, colspan=1, title="Overfit metrics")
+                ax2 = plt.subplot2grid((3, 2), (1, 1), rowspan=1, colspan=1, title="Classification metrics")
+                ax3 = plt.subplot2grid((3, 2), (2, 0), rowspan=1, colspan=2, title="Semantics metrics")
+
+                ax0.plot(list_losses)
+
+                ax1.plot(metric_overfit_items)
+                ax1.plot(metric_overfit_sentences)
+                ax1.plot(metric_overfit_repeated_items)
+                ax1.plot(metric_overfit_repeated_sentences)
+                ax1.legend(["Overfited items", "Overfited sentences", "Repeated items", "Repeated sentences"])
+
+                ax2.plot(metric_classification_overfit_items)
+                ax2.plot(metric_classification_overfit_sentences)
+                ax2.plot(metric_classification_labels)
+                ax2.plot(metric_classification_F_score)
+                ax2.legend(["Overfited items", "Overfited sentences", "Overfited labels", "F score"])
+
+                ax3.plot(metric_library_items)
+                ax3.plot(metric_classification_library_F_score)
+                ax3.legend(["Library labels", "F score"])
+            else:
+                ax0 = plt.subplot2grid((2, 2), (0, 0), rowspan=1, colspan=2, title="Loss function")
+                ax1 = plt.subplot2grid((2, 2), (1, 0), rowspan=1, colspan=1, title="Overfit metrics")
+                ax2 = plt.subplot2grid((2, 2), (1, 1), rowspan=1, colspan=1, title="Classification metrics")
+
+                ax0.plot(list_losses)
+
+                ax1.plot(metric_overfit_items)
+                ax1.plot(metric_overfit_sentences)
+                ax1.plot(metric_overfit_repeated_items)
+                ax1.plot(metric_overfit_repeated_sentences)
+                ax1.legend(["Overfited items", "Overfited sentences", "Repeated items", "Repeated sentences"])
+
+                ax2.plot(metric_classification_overfit_items)
+                ax2.plot(metric_classification_overfit_sentences)
+                ax2.plot(metric_classification_labels)
+                ax2.plot(metric_classification_F_score)
+                ax2.legend(["Overfited items", "Overfited sentences", "Overfited labels", "F score"])
 
             plt.tight_layout()
             plt_name = self.args.output_dir + "/model_preformace.png"
@@ -368,14 +413,26 @@ class ExtendedTrainer(Trainer):
         if self.tb_writer:
             self.tb_writer.close()
 
-        dict_metrics = {"Losses": list_losses,
-                        "Overfited_items": metric_overfit_items, "Overfited_sentences": metric_overfit_sentences,
-                        "Overfit_repeated_items": metric_overfit_repeated_items,
-                        "Overfit_repeated_sentences": metric_overfit_repeated_sentences,
-                        "Class_overfited_items": metric_classification_overfit_items,
-                        "Class_overfited_sentences": metric_classification_overfit_sentences,
-                        "Class_overfited_labels": metric_classification_labels,
-                        "Class_F_score": metric_classification_F_score}
+        if data_base is not None:
+            dict_metrics = {"Losses": list_losses,
+                            "Overfited_items": metric_overfit_items, "Overfited_sentences": metric_overfit_sentences,
+                            "Overfit_repeated_items": metric_overfit_repeated_items,
+                            "Overfit_repeated_sentences": metric_overfit_repeated_sentences,
+                            "Class_overfited_items": metric_classification_overfit_items,
+                            "Class_overfited_sentences": metric_classification_overfit_sentences,
+                            "Class_overfited_labels": metric_classification_labels,
+                            "Class_F_score": metric_classification_F_score,
+                            "Library_items": metric_library_items,
+                            "Classification_library_F_score": metric_classification_library_F_score}
+        else:
+            dict_metrics = {"Losses": list_losses,
+                            "Overfited_items": metric_overfit_items, "Overfited_sentences": metric_overfit_sentences,
+                            "Overfit_repeated_items": metric_overfit_repeated_items,
+                            "Overfit_repeated_sentences": metric_overfit_repeated_sentences,
+                            "Class_overfited_items": metric_classification_overfit_items,
+                            "Class_overfited_sentences": metric_classification_overfit_sentences,
+                            "Class_overfited_labels": metric_classification_labels,
+                            "Class_F_score": metric_classification_F_score}
         df_metrics = pd.DataFrame(dict_metrics)
         excel_name = self.args.output_dir + "/metrics.xlsx"
         df_metrics.to_excel(excel_name)

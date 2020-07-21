@@ -5,7 +5,7 @@ import edlib
 import re
 
 
-def overfit_count(list_decoded_outputs, train_data, data_base):
+def overfit_count(list_decoded_outputs, train_data, list_training_items, library, list_library_items):
     """
     Todo
     :param list_decoded_outputs:
@@ -32,70 +32,157 @@ def overfit_count(list_decoded_outputs, train_data, data_base):
     # the number of generated items which are present in the database and were labeled correctly but maybe not with
     # all correct labels
     num_classification_num_overfit_correct_labels = 0.0
-    # F beta score for generated items which are present in the databas
+    # F beta score for generated items which are present in the database
     num_classification_num_overfit_F_score = 0.0
 
-    for item in dict_generated_items["items"]:
+    len_list_decoded_outputs = len(list_decoded_outputs)
 
-        # if the item is in training data
-        database_item = train_data.find_one({"text": item})
-        if database_item is not None:
-            # list_overfit_items.append(1)
-            num_overfit_items = num_overfit_items + 1.0
-            # if the whole sentence is in training data
-            sentence_wo_eos_bos = re.sub('\<\|startoftext\|\>', '', database_item["training_data"])
-            sentence_wo_eos_bos = re.sub('\<\|endoftext\|\>', '', sentence_wo_eos_bos)
-            if sentence_wo_eos_bos == list_decoded_outputs[current_num]:
-                # list_overfit_sentence.append(1)
-                num_overfit_sentences = num_overfit_sentences + 1.0
-            # list_classification_num_overfit_items.append(1)
-            num_classification_num_overfit_items = num_classification_num_overfit_items + 1
-            # if dict_generated_items["labels"] == dict_db["labels"]
-            if set(dict_generated_items["labels"][current_num]) == set(database_item["label"]):
-                # list_classification_num_overfit_items_labels.append(1)
-                num_classification_num_overfit_items_labels = num_classification_num_overfit_items_labels + 1.0
-            # else if list for the generated item is a subset
-            elif set(dict_generated_items["labels"][current_num]) <= set(database_item["label"]):
-                # list_classification_num_overfit_correct_labels.append(1)
-                num_classification_num_overfit_correct_labels = num_classification_num_overfit_correct_labels + 1.0
+    if library is not None:
+
+        # the number of generated items which are present in the library
+        num_library_items = 0.0
+        # F beta score for generated items which are present in the library
+        num_classification_library_F_score = 0.0
+
+        for item in dict_generated_items["items"]:
+
+            # if the item is in training data
+            if item in list_training_items:
+
+                database_item = train_data.find_one({"text": item})
+
+                # list_overfit_items.append(1)
+                num_overfit_items = num_overfit_items + 1.0
+                # if the whole sentence is in training data
+                sentence_wo_eos_bos = re.sub('\<\|startoftext\|\>', '', database_item["training_data"])
+                sentence_wo_eos_bos = re.sub('\<\|endoftext\|\>', '', sentence_wo_eos_bos)
+                if sentence_wo_eos_bos == list_decoded_outputs[current_num]:
+                    # list_overfit_sentence.append(1)
+                    num_overfit_sentences = num_overfit_sentences + 1.0
+                # list_classification_num_overfit_items.append(1)
+                num_classification_num_overfit_items = num_classification_num_overfit_items + 1
+                # if dict_generated_items["labels"] == dict_db["labels"]
+                if set(dict_generated_items["labels"][current_num]) == set(database_item["label"]):
+                    # list_classification_num_overfit_items_labels.append(1)
+                    num_classification_num_overfit_items_labels = num_classification_num_overfit_items_labels + 1.0
+                # else if list for the generated item is a subset
+                elif set(dict_generated_items["labels"][current_num]) <= set(database_item["label"]):
+                    # list_classification_num_overfit_correct_labels.append(1)
+                    num_classification_num_overfit_correct_labels = num_classification_num_overfit_correct_labels + 1.0
+                # else
+                else:
+                    # list_classification_num_overfit_F_score.append(F-score)
+                    num_classification_num_overfit_F_score = num_classification_num_overfit_F_score + \
+                                                             F_score_item(dict_generated_items["labels"][current_num],
+                                                                          database_item["label"])
             # else
             else:
-                # list_classification_num_overfit_F_score.append(F-score)
-                num_classification_num_overfit_F_score = num_classification_num_overfit_F_score + \
-                                                         F_score_item(dict_generated_items["labels"][current_num],
-                                                                      database_item["label"])
-        # else
-        else:
-            # list_overfit_items.append(Levenshtein_distance)
-            list_Levenshtein_metrics = []
-            list_Levenshtein_metrics_sentences = []
-            for valid_item in train_data.find():
-                item_metrics = edlib.align(item, valid_item["text"])
-                normalized_distance = 1 - (item_metrics['editDistance'] / max(len(item), len(valid_item["text"])))
-                list_Levenshtein_metrics.append(normalized_distance)
+                # list_overfit_items.append(Levenshtein_distance)
+                list_Levenshtein_metrics = []
+                list_Levenshtein_metrics_sentences = []
+                for valid_item in train_data.find():
+                    item_metrics = edlib.align(item, valid_item["text"])
+                    normalized_distance = 1 - (item_metrics['editDistance'] / max(len(item), len(valid_item["text"])))
+                    list_Levenshtein_metrics.append(normalized_distance)
 
-                # list_overfit_sentence.append(Levenshtein_distance)
-                item_metrics = edlib.align(list_decoded_outputs[current_num], valid_item["training_data"])
-                normalized_distance = 1 - (item_metrics['editDistance'] / max(len(list_decoded_outputs[current_num]),
-                                                                              len(valid_item["training_data"])))
-                list_Levenshtein_metrics_sentences.append(normalized_distance)
+                    # list_overfit_sentence.append(Levenshtein_distance)
+                    item_metrics = edlib.align(list_decoded_outputs[current_num], valid_item["training_data"])
+                    normalized_distance = 1 - (item_metrics['editDistance'] / max(len(list_decoded_outputs[current_num]),
+                                                                                  len(valid_item["training_data"])))
+                    list_Levenshtein_metrics_sentences.append(normalized_distance)
 
-            num_overfit_items = num_overfit_items + max(list_Levenshtein_metrics)
-            num_overfit_sentences = num_overfit_sentences + max(list_Levenshtein_metrics_sentences)
+                if item in list_library_items:
+                    library_item = library.find_one({"text": item})
 
-        current_num = current_num + 1
+                    num_library_items = num_library_items + 1.0
+                    num_classification_library_F_score = num_classification_library_F_score + \
+                                                             F_score_item(dict_generated_items["labels"][current_num],
+                                                                          library_item["label"])
 
-    overfit_repeated_items = len(dict_generated_items["items"]) - len(set(dict_generated_items["items"]))
-    overfit_repeated_sentences = len(list_decoded_outputs) - len(set(list_decoded_outputs))
 
-    metrics = {"overfit_items": num_overfit_items/len(list_decoded_outputs),
-               "overfit_sentences": num_overfit_sentences/len(list_decoded_outputs),
-               "overfit_repeated_items": overfit_repeated_items/len(list_decoded_outputs),
-               "overfit_repeated_sentences": overfit_repeated_sentences/len(list_decoded_outputs),
-               "classification_overfit_items": num_classification_num_overfit_items/len(list_decoded_outputs),
-               "classification_overfit_sentences": num_classification_num_overfit_items_labels/len(list_decoded_outputs),
-               "classification_labels": num_classification_num_overfit_correct_labels/len(list_decoded_outputs),
-               "classification_F_score": num_classification_num_overfit_F_score/len(list_decoded_outputs)}
+                num_overfit_items = num_overfit_items + max(list_Levenshtein_metrics)
+                num_overfit_sentences = num_overfit_sentences + max(list_Levenshtein_metrics_sentences)
+
+            current_num = current_num + 1
+
+        overfit_repeated_items = len(dict_generated_items["items"]) - len(set(dict_generated_items["items"]))
+        overfit_repeated_sentences = len_list_decoded_outputs - len(set(list_decoded_outputs))
+
+        metrics = {"overfit_items": num_overfit_items/len_list_decoded_outputs,
+                   "overfit_sentences": num_overfit_sentences/len_list_decoded_outputs,
+                   "overfit_repeated_items": overfit_repeated_items/len_list_decoded_outputs,
+                   "overfit_repeated_sentences": overfit_repeated_sentences/len_list_decoded_outputs,
+                   "classification_overfit_items": num_classification_num_overfit_items/len_list_decoded_outputs,
+                   "classification_overfit_sentences": num_classification_num_overfit_items_labels/len_list_decoded_outputs,
+                   "classification_labels": num_classification_num_overfit_correct_labels/len_list_decoded_outputs,
+                   "classification_F_score": num_classification_num_overfit_F_score/len_list_decoded_outputs,
+                   "library_items": num_library_items/len_list_decoded_outputs,
+                   "classification_library_F_score": num_classification_library_F_score/len_list_decoded_outputs}
+    else:
+        for item in dict_generated_items["items"]:
+
+            # if the item is in training data
+            if item in list_training_items:
+
+                database_item = train_data.find_one({"text": item})
+
+                # list_overfit_items.append(1)
+                num_overfit_items = num_overfit_items + 1.0
+                # if the whole sentence is in training data
+                sentence_wo_eos_bos = re.sub('\<\|startoftext\|\>', '', database_item["training_data"])
+                sentence_wo_eos_bos = re.sub('\<\|endoftext\|\>', '', sentence_wo_eos_bos)
+                if sentence_wo_eos_bos == list_decoded_outputs[current_num]:
+                    # list_overfit_sentence.append(1)
+                    num_overfit_sentences = num_overfit_sentences + 1.0
+                # list_classification_num_overfit_items.append(1)
+                num_classification_num_overfit_items = num_classification_num_overfit_items + 1
+                # if dict_generated_items["labels"] == dict_db["labels"]
+                if set(dict_generated_items["labels"][current_num]) == set(database_item["label"]):
+                    # list_classification_num_overfit_items_labels.append(1)
+                    num_classification_num_overfit_items_labels = num_classification_num_overfit_items_labels + 1.0
+                # else if list for the generated item is a subset
+                elif set(dict_generated_items["labels"][current_num]) <= set(database_item["label"]):
+                    # list_classification_num_overfit_correct_labels.append(1)
+                    num_classification_num_overfit_correct_labels = num_classification_num_overfit_correct_labels + 1.0
+                # else
+                else:
+                    # list_classification_num_overfit_F_score.append(F-score)
+                    num_classification_num_overfit_F_score = num_classification_num_overfit_F_score + \
+                                                             F_score_item(dict_generated_items["labels"][current_num],
+                                                                          database_item["label"])
+            # else
+            else:
+                # list_overfit_items.append(Levenshtein_distance)
+                list_Levenshtein_metrics = []
+                list_Levenshtein_metrics_sentences = []
+                for valid_item in train_data.find():
+                    item_metrics = edlib.align(item, valid_item["text"])
+                    normalized_distance = 1 - (item_metrics['editDistance'] / max(len(item), len(valid_item["text"])))
+                    list_Levenshtein_metrics.append(normalized_distance)
+
+                    # list_overfit_sentence.append(Levenshtein_distance)
+                    item_metrics = edlib.align(list_decoded_outputs[current_num], valid_item["training_data"])
+                    normalized_distance = 1 - (
+                                item_metrics['editDistance'] / max(len(list_decoded_outputs[current_num]),
+                                                                   len(valid_item["training_data"])))
+                    list_Levenshtein_metrics_sentences.append(normalized_distance)
+
+                num_overfit_items = num_overfit_items + max(list_Levenshtein_metrics)
+                num_overfit_sentences = num_overfit_sentences + max(list_Levenshtein_metrics_sentences)
+
+            current_num = current_num + 1
+
+        overfit_repeated_items = len(dict_generated_items["items"]) - len(set(dict_generated_items["items"]))
+        overfit_repeated_sentences = len_list_decoded_outputs - len(set(list_decoded_outputs))
+
+        metrics = {"overfit_items": num_overfit_items / len_list_decoded_outputs,
+                   "overfit_sentences": num_overfit_sentences / len_list_decoded_outputs,
+                   "overfit_repeated_items": overfit_repeated_items / len_list_decoded_outputs,
+                   "overfit_repeated_sentences": overfit_repeated_sentences / len_list_decoded_outputs,
+                   "classification_overfit_items": num_classification_num_overfit_items / len_list_decoded_outputs,
+                   "classification_overfit_sentences": num_classification_num_overfit_items_labels / len_list_decoded_outputs,
+                   "classification_labels": num_classification_num_overfit_correct_labels / len_list_decoded_outputs,
+                   "classification_F_score": num_classification_num_overfit_F_score / len_list_decoded_outputs}
 
     return metrics
 

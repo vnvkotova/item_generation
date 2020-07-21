@@ -3,6 +3,87 @@ import pandas as pd
 from sklearn.preprocessing import MultiLabelBinarizer
 import numpy as np
 import edlib
+from nltk import pos_tag, word_tokenize
+from nltk.corpus import wordnet
+from transformers import pipeline
+
+
+def synonym_generation(initial_data):
+    """
+
+    :param initial_data:
+    :return:
+    """
+
+    nlp = pipeline("fill-mask")
+
+    list_initial_items = []
+    list_augmented_items = []
+    list_instruments = []
+    list_alphas = []
+    list_labels = []
+    list_keys = []
+    list_training_data = []
+    for document in initial_data.find():
+        list_tags = pos_tag(word_tokenize(document["text"]))
+        for tuple_word in list_tags:
+            if tuple_word[1] == 'RB' or tuple_word[1] == 'JJ' or tuple_word[1] == 'NN':
+                for syn in wordnet.synsets(tuple_word[0]):
+                    for l in syn.lemmas():
+                        synonym_item = re.sub(tuple_word[0], l.name(), document["text"])
+                        if not any(map(str.isdigit, synonym_item)) and (synonym_item not in list_augmented_items) and (
+                                document["text"] != synonym_item) and (":)" not in synonym_item):
+                            list_initial_items.append(document["text"])
+                            list_augmented_items.append(synonym_item)
+                            list_instruments.append(document["instrument"])
+                            list_alphas.append(document["alpha"])
+                            list_labels.append(document["label"])
+                            list_keys.append(document["key"])
+                            new_training_data = document["training_data"].split("@", 1)[
+                                                    0] + "@" + synonym_item + ".<|endoftext|>"
+                            list_training_data.append(new_training_data)
+                        if l.antonyms() and l.antonyms()[0].name() != "":
+                            antomym_item = re.sub(tuple_word[0], l.antonyms()[0].name(), document["text"])
+                            if not any(map(str.isdigit, antomym_item)) and (
+                                    antomym_item not in list_augmented_items) and (
+                                    document["text"] != antomym_item) and (":)" not in antomym_item):
+                                list_initial_items.append(document["text"])
+                                list_augmented_items.append(antomym_item)
+                                list_instruments.append(document["instrument"])
+                                list_alphas.append(document["alpha"])
+                                list_labels.append(document["label"])
+                                list_keys.append(document["key"])
+                                new_training_data = document["training_data"].split("@", 1)[
+                                                        0] + "@" + antomym_item + ".<|endoftext|>"
+                                list_training_data.append(new_training_data)
+                masked_item = re.sub(tuple_word[0], "<mask>", document["text"], 1)
+                list_filled_outputs = nlp(masked_item)
+                filled_sentence = ""
+                for dict_filled in list_filled_outputs:
+                    filled_sentence = dict_filled["sequence"]
+                    filled_sentence = re.sub("<s> ", "", filled_sentence)
+                    filled_sentence = re.sub("</s>", "", filled_sentence)
+                unmasked_spaces = document["text"].count(' ')
+                masked_spaces = filled_sentence.count(' ')
+                if masked_spaces >= unmasked_spaces and (not any(map(str.isdigit, filled_sentence))) and (
+                        filled_sentence not in list_augmented_items) and (document["text"] != filled_sentence) and (
+                        ":)" not in filled_sentence):
+                    list_initial_items.append(document["text"])
+                    list_augmented_items.append(filled_sentence)
+                    list_instruments.append(document["instrument"])
+                    list_alphas.append(document["alpha"])
+                    list_labels.append(document["label"])
+                    list_keys.append(document["key"])
+                    new_training_data = document["training_data"].split("@", 1)[
+                                            0] + "@" + filled_sentence + ".<|endoftext|>"
+                    list_training_data.append(new_training_data)
+
+    dict_augmented = {"initial_item": list_initial_items, "augmented_item": list_augmented_items,
+                      "instrument": list_instruments,
+                      "alpha": list_alphas, "label": list_labels, "key": list_keys, "training_data": list_training_data}
+    df_synonyms = pd.DataFrame(dict_augmented)
+
+    return df_synonyms
 
 
 def convert_into_training_file(df_to_convert):
@@ -51,6 +132,32 @@ def preprocess_generated_items(list_generated_items):
     dict_generated_items = {"items": list_items, "labels": list_labels}
 
     return dict_generated_items
+
+
+def augment_data(train_data):
+
+    # Todo should it return a dictionary???
+
+    list_texts = []
+    list_instruments = []
+    list_alphas = []
+    list_labels = []
+    list_keys = []
+    list_training_data = []
+    for document in train_data.find():
+        if document["text"][:2] == "I ":
+            new_text = document["text"][2:].capitalize()
+        else:
+            new_text = "I " + document["text"][0].lower() + document["text"][1:]
+        list_texts.append(new_text)
+        list_instruments.append(document["instrument"])
+        list_alphas.append(document["alpha"])
+        list_labels.append(document["label"])
+        list_keys.append(document["key"])
+        new_training_data = document["training_data"].split("@", 1)[0] + "@" + new_text + ".<|endoftext|>"
+        list_training_data.append(new_training_data)
+
+    return None
 
 
 def preprocess_db(db_list):
