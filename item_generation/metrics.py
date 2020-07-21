@@ -60,7 +60,7 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
                     # list_overfit_sentence.append(1)
                     num_overfit_sentences = num_overfit_sentences + 1.0
                 # list_classification_num_overfit_items.append(1)
-                num_classification_num_overfit_items = num_classification_num_overfit_items + 1
+                num_classification_num_overfit_items = num_classification_num_overfit_items + 1.0
                 # if dict_generated_items["labels"] == dict_db["labels"]
                 if set(dict_generated_items["labels"][current_num]) == set(database_item["label"]):
                     # list_classification_num_overfit_items_labels.append(1)
@@ -135,7 +135,7 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
                     # list_overfit_sentence.append(1)
                     num_overfit_sentences = num_overfit_sentences + 1.0
                 # list_classification_num_overfit_items.append(1)
-                num_classification_num_overfit_items = num_classification_num_overfit_items + 1
+                num_classification_num_overfit_items = num_classification_num_overfit_items + 1.0
                 # if dict_generated_items["labels"] == dict_db["labels"]
                 if set(dict_generated_items["labels"][current_num]) == set(database_item["label"]):
                     # list_classification_num_overfit_items_labels.append(1)

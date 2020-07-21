@@ -368,7 +368,7 @@ class ExtendedTrainer(Trainer):
                 ax1.plot(metric_overfit_sentences)
                 ax1.plot(metric_overfit_repeated_items)
                 ax1.plot(metric_overfit_repeated_sentences)
-                ax1.legend(["Overfited items", "Overfited sentences", "Repeated items", "Repeated sentences"])
+                ax1.legend(["Similar items", "Similar sentences", "Repeated items", "Repeated sentences"])
 
                 ax2.plot(metric_classification_overfit_items)
                 ax2.plot(metric_classification_overfit_sentences)
@@ -390,7 +390,7 @@ class ExtendedTrainer(Trainer):
                 ax1.plot(metric_overfit_sentences)
                 ax1.plot(metric_overfit_repeated_items)
                 ax1.plot(metric_overfit_repeated_sentences)
-                ax1.legend(["Overfited items", "Overfited sentences", "Repeated items", "Repeated sentences"])
+                ax1.legend(["Similar items", "Similar sentences", "Repeated items", "Repeated sentences"])
 
                 ax2.plot(metric_classification_overfit_items)
                 ax2.plot(metric_classification_overfit_sentences)
@@ -415,7 +415,7 @@ class ExtendedTrainer(Trainer):
 
         if data_base is not None:
             dict_metrics = {"Losses": list_losses,
-                            "Overfited_items": metric_overfit_items, "Overfited_sentences": metric_overfit_sentences,
+                            "Similar_items": metric_overfit_items, "Similar_sentences": metric_overfit_sentences,
                             "Overfit_repeated_items": metric_overfit_repeated_items,
                             "Overfit_repeated_sentences": metric_overfit_repeated_sentences,
                             "Class_overfited_items": metric_classification_overfit_items,
@@ -426,7 +426,7 @@ class ExtendedTrainer(Trainer):
                             "Classification_library_F_score": metric_classification_library_F_score}
         else:
             dict_metrics = {"Losses": list_losses,
-                            "Overfited_items": metric_overfit_items, "Overfited_sentences": metric_overfit_sentences,
+                            "Similar_items": metric_overfit_items, "Similar_sentences": metric_overfit_sentences,
                             "Overfit_repeated_items": metric_overfit_repeated_items,
                             "Overfit_repeated_sentences": metric_overfit_repeated_sentences,
                             "Class_overfited_items": metric_classification_overfit_items,
