@@ -148,8 +148,6 @@ class ExtendedTrainer(Trainer):
             logger.warning("Sorry, not all functionality is available if training data and the database itself are"
                            "not in mongoDB.")
 
-        train_dataloader = self.get_train_dataloader()
-
         current_item = train_data.find_one({"_id": 0})["initial_item"]
         list_items_intervals = []
         item_start = 0
@@ -161,6 +159,18 @@ class ExtendedTrainer(Trainer):
                 item_start = current_index
             current_index = current_index + 1
         list_items_intervals.append((item_start, current_index))
+
+        list_training_data = []
+        for item_interval in list_items_intervals:
+            item_id = random.randint(item_interval[0], item_interval[1])
+            list_training_data.append(train_data.find_one({"_id": item_id})["training_data"])
+        f = open(data_args.train_data_file, 'w')
+        for item in list_training_data:
+            f.write(item + '\n')
+        f.close()
+
+        self.train_dataset = get_dataset(data_args, tokenizer=tokenizer, local_rank=training_args.local_rank)
+        train_dataloader = self.get_train_dataloader()
 
         if self.args.max_steps > 0:
             t_total = self.args.max_steps
@@ -279,6 +289,7 @@ class ExtendedTrainer(Trainer):
             list_library_items = list(set(list_library_items)-set(list_training_items))
 
         for epoch in train_iterator:
+
             epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=not self.is_local_master())
             for step, inputs in enumerate(epoch_iterator):
 
