@@ -8,17 +8,6 @@ from nltk.corpus import wordnet
 from transformers import pipeline
 
 
-def db_to_training_file(output_dir, train_data):
-    train_data_file = output_dir + "GPT2_train_data.txt"
-    df_mongoDB_train = pd.DataFrame(list(train_data.find()))
-    list_mongoDB_train = df_mongoDB_train["training_data"].tolist()
-    f = open(train_data_file, 'w')
-    for item in list_mongoDB_train:
-        f.write(item + '\n')
-    f.close()
-    return None
-
-
 def synonym_generation(initial_data):
     """
 
