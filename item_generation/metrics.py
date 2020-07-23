@@ -37,7 +37,15 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
 
     len_list_decoded_outputs = len(list_decoded_outputs)
 
+    # unique items
+    list_0 = []
+    # training items
+    list_1 = []
+
     if library is not None:
+
+        # library items
+        list_2 = []
 
         # the number of generated items which are present in the library
         num_library_items = 0.0
@@ -50,6 +58,8 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
             if item in list_training_items:
 
                 database_item = train_data.find_one({"augmented_item": item})
+
+                list_1.append(list_decoded_outputs[current_num])
 
                 # list_overfit_items.append(1)
                 num_overfit_items = num_overfit_items + 1.0
@@ -99,6 +109,10 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
                                                              F_score_item(dict_generated_items["labels"][current_num],
                                                                           library_item["label"])
 
+                    list_2.append(list_decoded_outputs[current_num])
+                else:
+                    list_0.append(list_decoded_outputs[current_num])
+
 
                 num_overfit_items = num_overfit_items + max(list_Levenshtein_metrics)
                 num_overfit_sentences = num_overfit_sentences + max(list_Levenshtein_metrics_sentences)
@@ -117,7 +131,8 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
                    "classification_labels": num_classification_num_overfit_correct_labels/len_list_decoded_outputs,
                    "classification_F_score": num_classification_num_overfit_F_score/len_list_decoded_outputs,
                    "library_items": num_library_items/len_list_decoded_outputs,
-                   "classification_library_F_score": num_classification_library_F_score/len_list_decoded_outputs}
+                   "classification_library_F_score": num_classification_library_F_score/len_list_decoded_outputs,
+                   "classified_itmes": [list_0, list_1, list_2]}
     else:
         for item in dict_generated_items["items"]:
 
@@ -125,6 +140,8 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
             if item in list_training_items:
 
                 database_item = train_data.find_one({"augmented_item": item})
+
+                list_1.append(list_decoded_outputs[current_num])
 
                 # list_overfit_items.append(1)
                 num_overfit_items = num_overfit_items + 1.0
@@ -152,6 +169,9 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
                                                                           database_item["label"])
             # else
             else:
+
+                list_0.append(list_decoded_outputs[current_num])
+
                 # list_overfit_items.append(Levenshtein_distance)
                 list_Levenshtein_metrics = []
                 list_Levenshtein_metrics_sentences = []
@@ -182,7 +202,8 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
                    "classification_overfit_items": num_classification_num_overfit_items / len_list_decoded_outputs,
                    "classification_overfit_sentences": num_classification_num_overfit_items_labels / len_list_decoded_outputs,
                    "classification_labels": num_classification_num_overfit_correct_labels / len_list_decoded_outputs,
-                   "classification_F_score": num_classification_num_overfit_F_score / len_list_decoded_outputs}
+                   "classification_F_score": num_classification_num_overfit_F_score / len_list_decoded_outputs,
+                   "classified_sentences": [list_0, list_1]}
 
     return metrics
 

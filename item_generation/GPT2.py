@@ -716,11 +716,8 @@ class ExtendedTrainer(Trainer):
 
             for i, sample_output in enumerate(sample_outputs):
                 temp_sentence = tokenizer.decode(sample_output, skip_special_tokens=True)
-                logger.info(temp_sentence)
                 decoded_outputs.append(temp_sentence)
             model.train()
-
-            logger.info("------------------------------------------ Metrics ------------------------------------------")
 
             dict_metrics_epoch = overfit_count(decoded_outputs, train_data, list_training_items, data_base, list_library_items)
 
@@ -732,11 +729,26 @@ class ExtendedTrainer(Trainer):
             metric_classification_overfit_sentences.append(dict_metrics_epoch["classification_overfit_sentences"])
             metric_classification_labels.append(dict_metrics_epoch["classification_labels"])
             metric_classification_F_score.append(dict_metrics_epoch["classification_F_score"])
+            sentences = metric_classification_F_score.append(dict_metrics_epoch["classified_sentences"])
+
+            logger.info("----------------------------------------- Sentences -----------------------------------------")
+            logger.info("---------------------------------------- Unique items ---------------------------------------")
+            for sentence in sentences[0]:
+                logger.info(sentence)
+
+            logger.info("--------------------------------------- Training items --------------------------------------")
+            for sentence in sentences[1]:
+                logger.info(sentence)
 
             fig = plt.figure()
             fig.set_size_inches(12, 12)
 
             if data_base is not None:
+
+                logger.info(
+                    "--------------------------------------- Library items ---------------------------------------")
+                for sentence in sentences[2]:
+                    logger.info(sentence)
 
                 metric_library_items.append(dict_metrics_epoch["library_items"])
                 metric_classification_library_F_score.append(dict_metrics_epoch["classification_library_F_score"])
@@ -764,6 +776,10 @@ class ExtendedTrainer(Trainer):
                 ax3.plot(metric_classification_library_F_score)
                 ax3.legend(["Library items", "F score"])
             else:
+
+                logger.info(
+                    "------------------------------------------ Metrics ------------------------------------------")
+
                 ax0 = plt.subplot2grid((2, 2), (0, 0), rowspan=1, colspan=2, title="Loss function")
                 ax1 = plt.subplot2grid((2, 2), (1, 0), rowspan=1, colspan=1, title="Overfit metrics")
                 ax2 = plt.subplot2grid((2, 2), (1, 1), rowspan=1, colspan=1, title="Classification metrics")
