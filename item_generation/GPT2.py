@@ -729,7 +729,7 @@ class ExtendedTrainer(Trainer):
             metric_classification_overfit_sentences.append(dict_metrics_epoch["classification_overfit_sentences"])
             metric_classification_labels.append(dict_metrics_epoch["classification_labels"])
             metric_classification_F_score.append(dict_metrics_epoch["classification_F_score"])
-            sentences = metric_classification_F_score.append(dict_metrics_epoch["classified_sentences"])
+            sentences = dict_metrics_epoch["classified_sentences"]
 
             logger.info("----------------------------------------- Sentences -----------------------------------------")
             logger.info("---------------------------------------- Unique items ---------------------------------------")
