@@ -297,10 +297,12 @@ class ExtendedTrainer(Trainer):
                 if steps_trained_in_current_epoch > 0:
                     steps_trained_in_current_epoch -= 1
                     continue
-
+                print("Attention, tr_loss")
                 print(tr_loss)
                 new_var = self._training_step(model, inputs, optimizer)
+                print("Attention, new_var")
                 print(new_var)
+
                 tr_loss += self._training_step(model, inputs, optimizer)
 
                 if (step + 1) % self.args.gradient_accumulation_steps == 0 or (
