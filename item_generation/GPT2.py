@@ -646,10 +646,13 @@ class ExtendedTrainer(Trainer):
 
                 print("Attention, tr_loss")
                 print(tr_loss)
-                new_var = self._training_step(model, inputs, optimizer)
-                print("Attention, new_var")
-                print(new_var)
-
+                # new_var = self._training_step(model, inputs, optimizer)
+                print("Attention, inputs")
+                print(inputs)
+                print("Attention, model")
+                print(model)
+                print("Attention, optimizer")
+                print(optimizer)
 
                 tr_loss += self._training_step(model, inputs, optimizer)
 
