@@ -298,6 +298,9 @@ class ExtendedTrainer(Trainer):
                     steps_trained_in_current_epoch -= 1
                     continue
 
+                print(tr_loss)
+                new_var = self._training_step(model, inputs, optimizer)
+                print(new_var)
                 tr_loss += self._training_step(model, inputs, optimizer)
 
                 if (step + 1) % self.args.gradient_accumulation_steps == 0 or (
