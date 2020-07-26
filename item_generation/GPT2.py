@@ -991,6 +991,8 @@ def train_GPT2(model_name_or_path, train_data, data_base, output_dir, augmentati
 
     model = GPT2LMHeadModel.from_pretrained(model_name_or_path)
 
+    model.resize_token_embeddings(len(tokenizer))
+
     if data_args.block_size <= 0:
         data_args.block_size = tokenizer.max_len
         # Our input block size will be the max possible for the model
