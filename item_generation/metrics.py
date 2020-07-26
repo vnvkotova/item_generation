@@ -132,7 +132,7 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
                    "classification_F_score": num_classification_num_overfit_F_score/len_list_decoded_outputs,
                    "library_items": num_library_items/len_list_decoded_outputs,
                    "classification_library_F_score": num_classification_library_F_score/len_list_decoded_outputs,
-                   "classified_itmes": [list_0, list_1, list_2]}
+                   "classified_sentences": [list_0, list_1, list_2]}
     else:
         for item in dict_generated_items["items"]:
 
