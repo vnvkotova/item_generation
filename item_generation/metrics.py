@@ -35,7 +35,8 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
     # F beta score for generated items which are present in the database
     num_classification_num_overfit_F_score = 0.0
 
-    list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##"]
+    list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##",
+                    "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#"]
 
     len_list_decoded_outputs = len(list_decoded_outputs)
 
@@ -57,9 +58,10 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
         for item in dict_generated_items["items"]:
 
             bool_rubbish = False
-            for str_rubbish in list_rubbish:
-                if str_rubbish in list_decoded_outputs[current_num]:
-                    bool_rubbish = True
+            if "@" not in list_decoded_outputs[current_num]:
+                bool_rubbish = True
+            elif any(str_rubbish in list_decoded_outputs[current_num] for str_rubbish in list_rubbish):
+                bool_rubbish = True
 
             if bool_rubbish:
                 list_0.append(list_decoded_outputs[current_num])
@@ -147,9 +149,10 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
         for item in dict_generated_items["items"]:
 
             bool_rubbish = False
-            for str_rubbish in list_rubbish:
-                if str_rubbish in list_decoded_outputs[current_num]:
-                    bool_rubbish = True
+            if "@" not in list_decoded_outputs[current_num]:
+                bool_rubbish = True
+            elif any(str_rubbish in list_decoded_outputs[current_num] for str_rubbish in list_rubbish):
+                bool_rubbish = True
 
             if bool_rubbish:
                 list_0.append(list_decoded_outputs[current_num])
