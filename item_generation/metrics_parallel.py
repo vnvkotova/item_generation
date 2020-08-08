@@ -44,7 +44,8 @@ def overfit_iteration_library(preprocessed_tuple):
     for i in range(len(prob)):
         frac = frac + prob[i] / max_prob[i]
         list_frac.append(prob[i] / max_prob[i])
-    frac = np.percentile(np.array(list_frac), 50, interpolation="linear")
+    print(list_frac)
+    # frac = np.percentile(np.array(list_frac), 50, interpolation="linear")
 
     topk_probabilities = []
     for place_prob in pred_topk:
@@ -59,7 +60,8 @@ def overfit_iteration_library(preprocessed_tuple):
         for prob in probabilities:
             entropy = entropy + (prob / prob_sum) * np.log(prob / prob_sum)
         list_entropies.append(entropy * (-1))
-    entropy = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
+    print(list_entropies)
+    # entropy = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
 
     bool_rubbish = False
     if "@" not in preprocessed_tuple[0][1]:
@@ -148,7 +150,9 @@ def overfit_iteration_library(preprocessed_tuple):
             for i in range(len(prob)):
                 temp_frac = temp_frac + prob[i] / max_prob[i]
                 list_frac.append(prob[i] / max_prob[i])
-            frac_similar_item = np.percentile(np.array(list_frac), 50, interpolation="linear")
+            print(list_frac)
+            frac_similar_item = 0
+            # frac_similar_item = np.percentile(np.array(list_frac), 50, interpolation="linear")
 
             topk_probabilities = []
             for place_prob in pred_topk:
@@ -163,7 +167,9 @@ def overfit_iteration_library(preprocessed_tuple):
                 for prob in probabilities:
                     temp_entropy = entropy + (prob / prob_sum) * np.log(prob / prob_sum)
                 list_entropies.append(entropy * (-1))
-            entropy_similar_item = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
+            print(list_entropies)
+            entropy_similar_item = 0
+            # entropy_similar_item = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
 
             tuple_frac = (frac, frac_similar_item)
             tuple_entropy = (entropy, entropy_similar_item)
