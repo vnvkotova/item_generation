@@ -22,9 +22,9 @@ def overfit_iteration(preprocessed_tuple):
     global global_list_library_items
     global global_library
 
-    print("I'm here")
-    print("global_train_data in the overfit_iteration function: ", global_train_data)
-    print("And I'm not here")
+    # print("I'm here")
+    # print("global_train_data in the overfit_iteration function: ", global_train_data)
+    # print("And I'm not here")
 
     num_overfit_sentences = 0.0
     num_overfit_items = 0.0
