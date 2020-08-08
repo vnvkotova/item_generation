@@ -172,7 +172,7 @@ def overfit_iteration_library(preprocessed_tuple):
                 prob_sum = sum(probabilities)
                 for prob in probabilities:
                     temp_entropy = entropy + (prob / prob_sum) * np.log(prob / prob_sum)
-                list_entropies.append(entropy * (-1))
+                list_entropies.append(temp_entropy * (-1))
             # print(list_entropies)
             # entropy_similar_item = 0
             if 0.0 in list_entropies:
