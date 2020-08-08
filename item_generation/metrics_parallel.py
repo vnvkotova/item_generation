@@ -1,4 +1,4 @@
-from item_generation.utils import preprocess_generated_list, preprocess_generated_items_tuples, F_score_item
+from item_generation.utils import preprocess_generated_list, preprocess_generated_items_tuples, F_score_item, LM
 import numpy as np
 from torch import Tensor
 import edlib
@@ -11,6 +11,7 @@ global_list_training_items = []
 global_train_data = None
 global_list_library_items = []
 global_library = None
+global_LM_to_check = LM()
 
 
 def overfit_iteration_library(preprocessed_tuple):
@@ -22,6 +23,7 @@ def overfit_iteration_library(preprocessed_tuple):
     global global_train_data
     global global_list_library_items
     global global_library
+    global global_LM_to_check
 
     num_overfit_sentences = 0.0
     num_overfit_items = 0.0
@@ -32,6 +34,33 @@ def overfit_iteration_library(preprocessed_tuple):
     num_library_items = 0.0
     num_classification_num_overfit_F_score = 0.0
 
+    payload = global_LM_to_check.check_probabilities(preprocessed_tuple[0][0], topk=10)
+    real_topK = payload["real_topk"]
+    pred_topk = payload["pred_topk"]
+    prob = [i[1] for i in real_topK]
+    max_prob = [i[0][1] for i in pred_topk]
+    frac = 0
+    list_frac = []
+    for i in range(len(prob)):
+        frac = frac + prob[i] / max_prob[i]
+        list_frac.append(prob[i] / max_prob[i])
+    frac = np.percentile(np.array(list_frac), 50, interpolation="linear")
+
+    topk_probabilities = []
+    for place_prob in pred_topk:
+        temp_list = []
+        for prob in place_prob:
+            temp_list.append(prob[1])
+        topk_probabilities.append(temp_list)
+    list_entropies = []
+    for probabilities in topk_probabilities:
+        entropy = 0
+        prob_sum = sum(probabilities)
+        for prob in probabilities:
+            entropy = entropy + (prob / prob_sum) * np.log(prob / prob_sum)
+        list_entropies.append(entropy * (-1))
+    entropy = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
+
     bool_rubbish = False
     if "@" not in preprocessed_tuple[0][1]:
         bool_rubbish = True
@@ -40,6 +69,8 @@ def overfit_iteration_library(preprocessed_tuple):
 
     if bool_rubbish:
         tuple_type = (0, preprocessed_tuple[0][1])
+        tuple_frac = (frac, 0)
+        tuple_entropy = (entropy, 0)
     else:
         # if the item is in training data
         if preprocessed_tuple[0][0] in global_list_training_items:
@@ -71,12 +102,16 @@ def overfit_iteration_library(preprocessed_tuple):
                 # list_classification_num_overfit_F_score.append(F-score)
                 num_classification_num_overfit_F_score = F_score_item(preprocessed_tuple[1],
                                                                       database_item["label"])
+            tuple_frac = (frac, frac)
+            tuple_entropy = (entropy, entropy)
         # else
         else:
             # list_overfit_items.append(Levenshtein_distance)
             list_Levenshtein_metrics = []
             list_Levenshtein_metrics_sentences = []
+            list_training_items = []
             for valid_item in global_train_data.find():
+                list_training_items.append(valid_item["augmented_item"])
                 item_metrics = edlib.align(preprocessed_tuple[0][0], valid_item["augmented_item"])
                 normalized_distance = 1 - (item_metrics['editDistance'] / max(len(preprocessed_tuple[0][0]),
                                                                               len(valid_item["initial_item"])))
@@ -100,9 +135,40 @@ def overfit_iteration_library(preprocessed_tuple):
                 tuple_type = (0, preprocessed_tuple[0][1])
 
             num_overfit_items = max(list_Levenshtein_metrics)
+            most_similar_item = list_training_items[list_Levenshtein_metrics.index(num_overfit_items)]
             num_overfit_sentences = max(list_Levenshtein_metrics_sentences)
 
-    return tuple_type, num_overfit_sentences, num_overfit_items, num_classification_num_overfit_items, num_classification_library_F_score, num_classification_num_overfit_items_labels, num_classification_num_overfit_correct_labels, num_library_items, num_classification_num_overfit_F_score
+            payload = global_LM_to_check.check_probabilities(most_similar_item, topk=10)
+            real_topK = payload["real_topk"]
+            pred_topk = payload["pred_topk"]
+            prob = [i[1] for i in real_topK]
+            max_prob = [i[0][1] for i in pred_topk]
+            temp_frac = 0
+            list_frac = []
+            for i in range(len(prob)):
+                temp_frac = temp_frac + prob[i] / max_prob[i]
+                list_frac.append(prob[i] / max_prob[i])
+            frac_similar_item = np.percentile(np.array(list_frac), 50, interpolation="linear")
+
+            topk_probabilities = []
+            for place_prob in pred_topk:
+                temp_list = []
+                for prob in place_prob:
+                    temp_list.append(prob[1])
+                topk_probabilities.append(temp_list)
+            list_entropies = []
+            for probabilities in topk_probabilities:
+                temp_entropy = 0
+                prob_sum = sum(probabilities)
+                for prob in probabilities:
+                    temp_entropy = entropy + (prob / prob_sum) * np.log(prob / prob_sum)
+                list_entropies.append(entropy * (-1))
+            entropy_similar_item = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
+
+            tuple_frac = (frac, frac_similar_item)
+            tuple_entropy = (entropy, entropy_similar_item)
+
+    return tuple_type, num_overfit_sentences, num_overfit_items, num_classification_num_overfit_items, num_classification_library_F_score, num_classification_num_overfit_items_labels, num_classification_num_overfit_correct_labels, num_library_items, num_classification_num_overfit_F_score, tuple_frac, tuple_entropy
 
 
 def overfit_iteration(preprocessed_tuple):
@@ -112,6 +178,7 @@ def overfit_iteration(preprocessed_tuple):
 
     global global_list_training_items
     global global_train_data
+    global global_LM_to_check
 
     num_overfit_sentences = 0.0
     num_overfit_items = 0.0
@@ -182,7 +249,8 @@ def overfit_iteration(preprocessed_tuple):
 
             num_overfit_items = max(list_Levenshtein_metrics)
             num_overfit_sentences = max(list_Levenshtein_metrics_sentences)
-        return tuple_type, num_overfit_sentences, num_overfit_items, num_classification_num_overfit_items, num_classification_num_overfit_items_labels, num_classification_num_overfit_correct_labels, num_classification_num_overfit_F_score
+
+    return tuple_type, num_overfit_sentences, num_overfit_items, num_classification_num_overfit_items, num_classification_num_overfit_items_labels, num_classification_num_overfit_correct_labels, num_classification_num_overfit_F_score
 
 
 def overfit_count(list_decoded_outputs, train_data, list_training_items, library, list_library_items):
@@ -193,9 +261,6 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
     :param data_base:
     :return:
     """
-
-    list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##",
-                    "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#"]
 
     list_preprocessed_tuples, overfit_repeated_items = preprocess_generated_items_tuples(list_decoded_outputs)
 
@@ -217,6 +282,11 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
     num_classification_num_overfit_correct_labels = 0.0
     # F beta score for generated items which are present in the database
     num_classification_num_overfit_F_score = 0.0
+
+    generated_frac = 0.0
+    training_frac = 0.0
+    generated_entropy = 0.0
+    training_entropy = 0.0
 
     # list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##",
     #                 "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#"]
@@ -266,6 +336,10 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
             num_classification_num_overfit_correct_labels = num_classification_num_overfit_correct_labels + item[6]
             num_library_items = num_library_items + item[7]
             num_classification_num_overfit_F_score = num_classification_num_overfit_F_score + item[8]
+            generated_frac = generated_frac + item[9][0]
+            training_frac = training_frac + item[9][1]
+            generated_entropy = generated_entropy + item[10][0]
+            training_entropy = training_entropy + item[10][1]
 
         overfit_repeated_sentences = len_list_decoded_outputs - len(set(list_decoded_outputs))
 
@@ -279,6 +353,10 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
                    "classification_F_score": num_classification_num_overfit_F_score/len_list_decoded_outputs,
                    "library_items": num_library_items/len_list_decoded_outputs,
                    "classification_library_F_score": num_classification_library_F_score/len_list_decoded_outputs,
+                   "generated_frac": generated_frac/len_list_decoded_outputs,
+                   "training_frac": training_frac/len_list_decoded_outputs,
+                   "generated_entropy": generated_entropy/len_list_decoded_outputs,
+                   "training_entropy": training_entropy/len_list_decoded_outputs,
                    "classified_sentences": [list_0, list_1, list_2]}
     else:
         output = Parallel(n_jobs=num_cores, require='sharedmem')(delayed(overfit_iteration)(preprocessed_tuple) for preprocessed_tuple in list_preprocessed_tuples)

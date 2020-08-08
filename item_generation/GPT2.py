@@ -404,7 +404,7 @@ class ExtendedTrainer(Trainer):
                 ax0 = plt.subplot2grid((3, 2), (0, 0), rowspan=1, colspan=2, title="Loss function")
                 ax1 = plt.subplot2grid((3, 2), (1, 0), rowspan=1, colspan=1, title="Overfit metrics")
                 ax2 = plt.subplot2grid((3, 2), (1, 1), rowspan=1, colspan=1, title="Classification metrics")
-                ax3 = plt.subplot2grid((3, 2), (2, 0), rowspan=1, colspan=2, title="Semantics metrics")
+                ax3 = plt.subplot2grid((3, 2), (2, 0), rowspan=1, colspan=2, title="Semantic metrics")
 
                 ax0.plot(list_losses)
 
@@ -614,7 +614,11 @@ class ExtendedTrainer(Trainer):
         metric_classification_overfit_sentences = []
         metric_classification_labels = []
         metric_classification_F_score = []
-        current_epoch = 0
+
+        generated_frac = []
+        training_frac = []
+        generated_entropy = []
+        training_entropy = []
 
         metric_library_items = []
         metric_classification_library_F_score = []
@@ -730,6 +734,10 @@ class ExtendedTrainer(Trainer):
             metric_classification_overfit_sentences.append(dict_metrics_epoch["classification_overfit_sentences"])
             metric_classification_labels.append(dict_metrics_epoch["classification_labels"])
             metric_classification_F_score.append(dict_metrics_epoch["classification_F_score"])
+            generated_frac.append(dict_metrics_epoch["generated_frac"])
+            training_frac.append(dict_metrics_epoch["training_frac"])
+            generated_entropy.append(dict_metrics_epoch["generated_entropy"])
+            training_entropy.append(dict_metrics_epoch["training_entropy"])
             sentences = dict_metrics_epoch["classified_sentences"]
 
             logger.info("----------------------------------------- Sentences -----------------------------------------")
@@ -757,7 +765,8 @@ class ExtendedTrainer(Trainer):
                 ax0 = plt.subplot2grid((3, 2), (0, 0), rowspan=1, colspan=2, title="Loss function")
                 ax1 = plt.subplot2grid((3, 2), (1, 0), rowspan=1, colspan=1, title="Overfit metrics")
                 ax2 = plt.subplot2grid((3, 2), (1, 1), rowspan=1, colspan=1, title="Classification metrics")
-                ax3 = plt.subplot2grid((3, 2), (2, 0), rowspan=1, colspan=2, title="Semantics metrics")
+                ax3 = plt.subplot2grid((3, 2), (2, 0), rowspan=1, colspan=1, title="Semantic metrics")
+                ax4 = plt.subplot2grid((3, 2), (2, 1), rowspan=1, colspan=1, title="LM distribution metrics")
 
                 ax0.plot(list_losses)
 
@@ -776,6 +785,13 @@ class ExtendedTrainer(Trainer):
                 ax3.plot(metric_library_items)
                 ax3.plot(metric_classification_library_F_score)
                 ax3.legend(["Library items", "F score"])
+
+                ax4.plot(generated_frac)
+                ax4.plot(training_frac)
+                ax4.plot(generated_entropy)
+                ax4.plot(training_entropy)
+                ax4.legend(["Probability of generated items", "Probability of similar items",
+                            "Entropy of generated items", "Entropy of similar items"])
             else:
 
                 logger.info(
@@ -824,7 +840,12 @@ class ExtendedTrainer(Trainer):
                             "Class_overfited_labels": metric_classification_labels,
                             "Class_F_score": metric_classification_F_score,
                             "Library_items": metric_library_items,
-                            "Classification_library_F_score": metric_classification_library_F_score}
+                            "Classification_library_F_score": metric_classification_library_F_score,
+                            "Generated_frac": generated_frac,
+                            "Training_frac": training_frac,
+                            "Generated_entropy": generated_entropy,
+                            "Training_entropy": training_entropy
+            }
         else:
             dict_metrics = {"Losses": list_losses,
                             "Similar_items": metric_overfit_items, "Similar_sentences": metric_overfit_sentences,
