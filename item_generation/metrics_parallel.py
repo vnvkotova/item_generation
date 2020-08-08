@@ -17,6 +17,14 @@ def overfit_iteration(preprocessed_tuple):
     list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##",
                     "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#"]
 
+    num_overfit_sentences = 0.0
+    num_overfit_items = 0.0
+    num_classification_num_overfit_items = 0.0
+    num_classification_library_F_score = 0.0
+    num_classification_num_overfit_items_labels = 0.0
+    num_classification_num_overfit_correct_labels = 0.0
+    num_library_items = 0.0
+
     bool_rubbish = False
     if "@" not in preprocessed_tuple[0][1]:
         bool_rubbish = True
@@ -40,7 +48,7 @@ def overfit_iteration(preprocessed_tuple):
             sentence_wo_eos_bos = re.sub('\<\|endoftext\|\>', '', sentence_wo_eos_bos)
             if sentence_wo_eos_bos == preprocessed_tuple[0][1]:
                 # list_overfit_sentence.append(1)
-                num_overfit_sentences = + 1.0
+                num_overfit_sentences = 1.0
             # list_classification_num_overfit_items.append(1)
             num_classification_num_overfit_items = 1.0
             # if dict_generated_items["labels"] == dict_db["labels"]
