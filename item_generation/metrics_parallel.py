@@ -4,6 +4,87 @@ from torch import Tensor
 import edlib
 import re
 
+from joblib import Parallel, delayed
+import multiprocessing
+
+
+def overfit_iteration(preprocessed_tuple, list_training_items, train_data, list_library_items, library):
+
+    list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##",
+                    "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#"]
+
+    bool_rubbish = False
+    if "@" not in preprocessed_tuple[0][1]:
+        bool_rubbish = True
+    elif any(str_rubbish in preprocessed_tuple[0][1] for str_rubbish in list_rubbish):
+        bool_rubbish = True
+
+    if bool_rubbish:
+        tuple_type = (0, preprocessed_tuple[0][1])
+    else:
+        # if the item is in training data
+        if preprocessed_tuple[0][0] in list_training_items:
+
+            database_item = train_data.find_one({"augmented_item": preprocessed_tuple[0][0]})
+
+            tuple_type = (1, preprocessed_tuple[0][1])
+
+            # list_overfit_items.append(1)
+            num_overfit_items = 1.0
+            # if the whole sentence is in training data
+            sentence_wo_eos_bos = re.sub('\<\|startoftext\|\>', '', database_item["training_data"])
+            sentence_wo_eos_bos = re.sub('\<\|endoftext\|\>', '', sentence_wo_eos_bos)
+            if sentence_wo_eos_bos == preprocessed_tuple[0][1]:
+                # list_overfit_sentence.append(1)
+                num_overfit_sentences = + 1.0
+            # list_classification_num_overfit_items.append(1)
+            num_classification_num_overfit_items = 1.0
+            # if dict_generated_items["labels"] == dict_db["labels"]
+            if set(preprocessed_tuple[1]) == set(database_item["label"]):
+                # list_classification_num_overfit_items_labels.append(1)
+                num_classification_num_overfit_items_labels = 1.0
+            # else if list for the generated item is a subset
+            elif set(preprocessed_tuple[1]) <= set(database_item["label"]):
+                # list_classification_num_overfit_correct_labels.append(1)
+                num_classification_num_overfit_correct_labels = 1.0
+            # else
+            else:
+                # list_classification_num_overfit_F_score.append(F-score)
+                num_classification_num_overfit_F_score = F_score_item(preprocessed_tuple[1],
+                                                                      database_item["label"])
+        # else
+        else:
+            # list_overfit_items.append(Levenshtein_distance)
+            list_Levenshtein_metrics = []
+            list_Levenshtein_metrics_sentences = []
+            for valid_item in train_data.find():
+                item_metrics = edlib.align(preprocessed_tuple[0][0], valid_item["augmented_item"])
+                normalized_distance = 1 - (item_metrics['editDistance'] / max(len(preprocessed_tuple[0][0]),
+                                                                              len(valid_item["initial_item"])))
+                list_Levenshtein_metrics.append(normalized_distance)
+
+                # list_overfit_sentence.append(Levenshtein_distance)
+                item_metrics = edlib.align(preprocessed_tuple[0][1], valid_item["training_data"])
+                normalized_distance = 1 - (item_metrics['editDistance'] / max(len(preprocessed_tuple[0][1]),
+                                                                              len(valid_item["training_data"])))
+                list_Levenshtein_metrics_sentences.append(normalized_distance)
+
+            if preprocessed_tuple[0][0] in list_library_items:
+                library_item = library.find_one({"augmented_item": preprocessed_tuple[0][0]})
+
+                num_library_items = 1.0
+                num_classification_library_F_score = F_score_item(preprocessed_tuple[1],
+                                                                  library_item["label"])
+
+                tuple_type = (2, preprocessed_tuple[0][1])
+            else:
+                tuple_type = (0, preprocessed_tuple[0][1])
+
+            num_overfit_items = max(list_Levenshtein_metrics)
+            num_overfit_sentences = max(list_Levenshtein_metrics_sentences)
+
+    return tuple_type, num_overfit_sentences, num_overfit_items, num_classification_num_overfit_items, num_classification_library_F_score, num_classification_num_overfit_items_labels, num_classification_num_overfit_correct_labels, num_library_items
+
 
 def overfit_count(list_decoded_outputs, train_data, list_training_items, library, list_library_items):
     """
@@ -14,7 +95,12 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
     :return:
     """
 
+    list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##",
+                    "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#"]
+
     list_preprocessed_tuples, overfit_repeated_items = preprocess_generated_items_tuples(list_decoded_outputs)
+
+    num_cores = multiprocessing.cpu_count()
 
     # these are metrics to measure the generation overfit
     # evaluate items overfit via Levenshtein distance
@@ -33,8 +119,8 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
     # F beta score for generated items which are present in the database
     num_classification_num_overfit_F_score = 0.0
 
-    list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##",
-                    "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#"]
+    # list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##",
+    #                 "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#"]
 
     len_list_decoded_outputs = len(list_decoded_outputs)
 
@@ -53,79 +139,22 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
         # F beta score for generated items which are present in the library
         num_classification_library_F_score = 0.0
 
-        for preprocessed_tuple in list_preprocessed_tuples:
+        output = Parallel(n_jobs=num_cores)(delayed(overfit_iteration)(preprocessed_tuple, list_training_items, train_data, list_library_items, library) for preprocessed_tuple in list_preprocessed_tuples)
 
-            bool_rubbish = False
-            if "@" not in preprocessed_tuple[0][1]:
-                bool_rubbish = True
-            elif any(str_rubbish in preprocessed_tuple[0][1] for str_rubbish in list_rubbish):
-                bool_rubbish = True
-
-            if bool_rubbish:
-                list_0.append(preprocessed_tuple[0][1])
+        for item in output:
+            if item[0][0] == 0:
+                list_0.append(item[0][1])
+            elif item[0][0] == 1:
+                list_1.append(item[0][1])
             else:
-                # if the item is in training data
-                if preprocessed_tuple[0][0] in list_training_items:
-
-                    database_item = train_data.find_one({"augmented_item": preprocessed_tuple[0][0]})
-
-                    list_1.append(preprocessed_tuple[0][1])
-
-                    # list_overfit_items.append(1)
-                    num_overfit_items = num_overfit_items + 1.0
-                    # if the whole sentence is in training data
-                    sentence_wo_eos_bos = re.sub('\<\|startoftext\|\>', '', database_item["training_data"])
-                    sentence_wo_eos_bos = re.sub('\<\|endoftext\|\>', '', sentence_wo_eos_bos)
-                    if sentence_wo_eos_bos == preprocessed_tuple[0][1]:
-                        # list_overfit_sentence.append(1)
-                        num_overfit_sentences = num_overfit_sentences + 1.0
-                    # list_classification_num_overfit_items.append(1)
-                    num_classification_num_overfit_items = num_classification_num_overfit_items + 1.0
-                    # if dict_generated_items["labels"] == dict_db["labels"]
-                    if set(preprocessed_tuple[1]) == set(database_item["label"]):
-                        # list_classification_num_overfit_items_labels.append(1)
-                        num_classification_num_overfit_items_labels = num_classification_num_overfit_items_labels + 1.0
-                    # else if list for the generated item is a subset
-                    elif set(preprocessed_tuple[1]) <= set(database_item["label"]):
-                        # list_classification_num_overfit_correct_labels.append(1)
-                        num_classification_num_overfit_correct_labels = num_classification_num_overfit_correct_labels + 1.0
-                    # else
-                    else:
-                        # list_classification_num_overfit_F_score.append(F-score)
-                        num_classification_num_overfit_F_score = num_classification_num_overfit_F_score + \
-                                                                 F_score_item(preprocessed_tuple[1],
-                                                                              database_item["label"])
-                # else
-                else:
-                    # list_overfit_items.append(Levenshtein_distance)
-                    list_Levenshtein_metrics = []
-                    list_Levenshtein_metrics_sentences = []
-                    for valid_item in train_data.find():
-                        item_metrics = edlib.align(preprocessed_tuple[0][0], valid_item["augmented_item"])
-                        normalized_distance = 1 - (item_metrics['editDistance'] / max(len(preprocessed_tuple[0][0]), len(valid_item["initial_item"])))
-                        list_Levenshtein_metrics.append(normalized_distance)
-
-                        # list_overfit_sentence.append(Levenshtein_distance)
-                        item_metrics = edlib.align(preprocessed_tuple[0][1], valid_item["training_data"])
-                        normalized_distance = 1 - (item_metrics['editDistance'] / max(len(preprocessed_tuple[0][1]),
-                                                                                      len(valid_item["training_data"])))
-                        list_Levenshtein_metrics_sentences.append(normalized_distance)
-
-                    if preprocessed_tuple[0][0] in list_library_items:
-                        library_item = library.find_one({"augmented_item": preprocessed_tuple[0][0]})
-
-                        num_library_items = num_library_items + 1.0
-                        num_classification_library_F_score = num_classification_library_F_score + \
-                                                                 F_score_item(preprocessed_tuple[1],
-                                                                              library_item["label"])
-
-                        list_2.append(preprocessed_tuple[0][1])
-                    else:
-                        list_0.append(preprocessed_tuple[0][1])
-
-
-                    num_overfit_items = num_overfit_items + max(list_Levenshtein_metrics)
-                    num_overfit_sentences = num_overfit_sentences + max(list_Levenshtein_metrics_sentences)
+                list_2.append(item[0][1])
+            num_overfit_sentences = num_overfit_sentences + item[1]
+            num_overfit_items = num_overfit_items + item[2]
+            num_classification_num_overfit_items = num_classification_num_overfit_items + item[3]
+            num_classification_library_F_score = num_classification_library_F_score + item[4]
+            num_classification_num_overfit_items_labels = num_classification_num_overfit_items_labels + item[5]
+            num_classification_num_overfit_correct_labels = num_classification_num_overfit_correct_labels + item[6]
+            num_library_items = num_library_items + item[6]
 
         overfit_repeated_sentences = len_list_decoded_outputs - len(set(list_decoded_outputs))
 
