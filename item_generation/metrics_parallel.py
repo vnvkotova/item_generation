@@ -171,7 +171,7 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
         # F beta score for generated items which are present in the library
         num_classification_library_F_score = 0.0
 
-        output = Parallel(n_jobs=num_cores)(delayed(overfit_iteration)(preprocessed_tuple) for preprocessed_tuple in list_preprocessed_tuples)
+        output = Parallel(n_jobs=num_cores, require='sharedmem')(delayed(overfit_iteration)(preprocessed_tuple) for preprocessed_tuple in list_preprocessed_tuples)
 
         for item in output:
             if item[0][0] == 0:
