@@ -7,8 +7,12 @@ import re
 from joblib import Parallel, delayed
 import multiprocessing
 
+global_list_training_items = []
+global_train_data = None
+global_list_library_items = []
+global_library = None
 
-def overfit_iteration(preprocessed_tuple, list_training_items, train_data, list_library_items, library):
+def overfit_iteration(preprocessed_tuple):
 
     list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##",
                     "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#"]
@@ -23,9 +27,9 @@ def overfit_iteration(preprocessed_tuple, list_training_items, train_data, list_
         tuple_type = (0, preprocessed_tuple[0][1])
     else:
         # if the item is in training data
-        if preprocessed_tuple[0][0] in list_training_items:
+        if preprocessed_tuple[0][0] in global_list_training_items:
 
-            database_item = train_data.find_one({"augmented_item": preprocessed_tuple[0][0]})
+            database_item = global_train_data.find_one({"augmented_item": preprocessed_tuple[0][0]})
 
             tuple_type = (1, preprocessed_tuple[0][1])
 
@@ -57,7 +61,7 @@ def overfit_iteration(preprocessed_tuple, list_training_items, train_data, list_
             # list_overfit_items.append(Levenshtein_distance)
             list_Levenshtein_metrics = []
             list_Levenshtein_metrics_sentences = []
-            for valid_item in train_data.find():
+            for valid_item in global_train_data.find():
                 item_metrics = edlib.align(preprocessed_tuple[0][0], valid_item["augmented_item"])
                 normalized_distance = 1 - (item_metrics['editDistance'] / max(len(preprocessed_tuple[0][0]),
                                                                               len(valid_item["initial_item"])))
@@ -69,8 +73,8 @@ def overfit_iteration(preprocessed_tuple, list_training_items, train_data, list_
                                                                               len(valid_item["training_data"])))
                 list_Levenshtein_metrics_sentences.append(normalized_distance)
 
-            if preprocessed_tuple[0][0] in list_library_items:
-                library_item = library.find_one({"augmented_item": preprocessed_tuple[0][0]})
+            if preprocessed_tuple[0][0] in global_list_library_items:
+                library_item = global_library.find_one({"augmented_item": preprocessed_tuple[0][0]})
 
                 num_library_items = 1.0
                 num_classification_library_F_score = F_score_item(preprocessed_tuple[1],
@@ -129,6 +133,11 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
     # training items
     list_1 = []
 
+    global_list_training_items = list_training_items
+    global_train_data = train_data
+    global_list_library_items = list_library_items
+    global_library = library
+
     if library is not None:
 
         # library items
@@ -139,7 +148,7 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
         # F beta score for generated items which are present in the library
         num_classification_library_F_score = 0.0
 
-        output = Parallel(n_jobs=num_cores)(delayed(overfit_iteration)(preprocessed_tuple, list_training_items, train_data, list_library_items, library) for preprocessed_tuple in list_preprocessed_tuples)
+        output = Parallel(n_jobs=num_cores)(delayed(overfit_iteration)(preprocessed_tuple) for preprocessed_tuple in list_preprocessed_tuples)
 
         for item in output:
             if item[0][0] == 0:
