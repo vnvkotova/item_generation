@@ -17,10 +17,12 @@ def overfit_iteration(preprocessed_tuple):
     list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##",
                     "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#"]
 
-    global global_list_training_items
-    global global_train_data
-    global global_list_library_items
-    global global_library
+    # global global_list_training_items
+    # global global_train_data
+    # global global_list_library_items
+    # global global_library
+
+    print(global_train_data)
 
     num_overfit_sentences = 0.0
     num_overfit_items = 0.0
@@ -154,6 +156,8 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
     global_train_data = train_data
     global_list_library_items = list_library_items
     global_library = library
+
+    print(global_train_data)
 
     if library is not None:
 
