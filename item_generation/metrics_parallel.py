@@ -52,7 +52,10 @@ def overfit_iteration_library(preprocessed_tuple):
     #     list_frac = [0.00000000000001 if (x == 0.0 or x == nan) else x for x in list_frac]
     print(list_frac)
     # frac = 0
-    frac = np.percentile(np.array(list_frac), 50, interpolation="linear")
+    if len(list_frac) != 0:
+        frac = np.percentile(np.array(list_frac), 50, interpolation="linear")
+    else:
+        frac = 0.0
     print("generated frac ", frac)
 
     topk_probabilities = []
@@ -76,7 +79,10 @@ def overfit_iteration_library(preprocessed_tuple):
     #     list_entropies = [0.00000000000001 if (x == 0.0 or x == None) else x for x in list_entropies]
     print(list_entropies)
     # entropy = 0
-    entropy = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
+    if len(list_entropies) != 0:
+        entropy = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
+    else:
+        entropy = 0
     print("generated entropy ", entropy)
 
     bool_rubbish = False
