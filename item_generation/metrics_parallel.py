@@ -43,10 +43,13 @@ def overfit_iteration_library(preprocessed_tuple):
     frac = 0
     list_frac = []
     for i in range(len(prob)):
-        list_frac.append(prob[i] / max_prob[i])
+        if (not np.isnan(prob[i] / max_prob[i])) and (prob[i] / max_prob[i] != 0):
+            list_frac.append(prob[i] / max_prob[i])
+        else:
+            list_frac.append(0.00000000000001)
     # print(list_frac)
-    if 0.0 in list_frac:
-        list_frac = [0.00000000000001 if (x == 0.0 or x == None) else x for x in list_frac]
+    # if 0.0 in list_frac:
+    #     list_frac = [0.00000000000001 if (x == 0.0 or x == nan) else x for x in list_frac]
     print(list_frac)
     # frac = 0
     frac = np.percentile(np.array(list_frac), 50, interpolation="linear")
@@ -64,10 +67,13 @@ def overfit_iteration_library(preprocessed_tuple):
         prob_sum = sum(probabilities)
         for prob in probabilities:
             entropy = entropy + (prob / prob_sum) * np.log(prob / prob_sum)
-        list_entropies.append(entropy * (-1))
+        if (not np.isnan(entropy)) and (entropy != 0):
+            list_entropies.append(entropy * (-1))
+        else:
+            list_entropies.append(0.00000000000001)
     # print(list_entropies)
-    if 0.0 in list_entropies:
-        list_entropies = [0.00000000000001 if (x == 0.0 or x == None) else x for x in list_entropies]
+    # if 0.0 in list_entropies:
+    #     list_entropies = [0.00000000000001 if (x == 0.0 or x == None) else x for x in list_entropies]
     print(list_entropies)
     # entropy = 0
     entropy = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
@@ -160,9 +166,12 @@ def overfit_iteration_library(preprocessed_tuple):
                 temp_frac = 0
                 list_frac = []
                 for i in range(len(prob)):
-                    list_frac.append(prob[i] / max_prob[i])
-                if 0.0 in list_frac:
-                    list_frac = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_frac]
+                    if (not np.isnan(prob[i] / max_prob[i])) and (prob[i] / max_prob[i] != 0):
+                        list_frac.append(prob[i] / max_prob[i])
+                    else:
+                        list_frac.append(0.00000000000001)
+                # if 0.0 in list_frac:
+                #     list_frac = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_frac]
                 print(list_frac)
                 # frac_similar_item = 0
                 frac_similar_item = np.percentile(np.array(list_frac), 50, interpolation="linear")
@@ -180,9 +189,12 @@ def overfit_iteration_library(preprocessed_tuple):
                     prob_sum = sum(probabilities)
                     for prob in probabilities:
                         temp_entropy = entropy + (prob / prob_sum) * np.log(prob / prob_sum)
-                    list_entropies.append(temp_entropy * (-1))
-                if 0.0 in list_entropies:
-                    list_entropies = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_entropies]
+                    if (not np.isnan(temp_entropy)) and (temp_entropy != 0):
+                        list_entropies.append(temp_entropy * (-1))
+                    else:
+                        list_entropies.append(0.00000000000001)
+                # if 0.0 in list_entropies:
+                #     list_entropies = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_entropies]
                 print(list_entropies)
                 # entropy_similar_item = 0
                 entropy_similar_item = np.percentile(np.array(list_entropies), 50, interpolation="linear")
