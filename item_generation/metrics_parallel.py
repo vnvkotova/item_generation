@@ -50,6 +50,7 @@ def overfit_iteration_library(preprocessed_tuple):
     print(list_frac)
     # frac = 0
     frac = np.percentile(np.array(list_frac), 50, interpolation="linear")
+    print("generated frac ", frac)
 
     topk_probabilities = []
     for place_prob in pred_topk:
@@ -70,6 +71,7 @@ def overfit_iteration_library(preprocessed_tuple):
     print(list_entropies)
     # entropy = 0
     entropy = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
+    print("generated entropy ", entropy)
 
     bool_rubbish = False
     if "@" not in preprocessed_tuple[0][1]:
@@ -145,43 +147,49 @@ def overfit_iteration_library(preprocessed_tuple):
                 tuple_type = (0, preprocessed_tuple[0][1])
 
             num_overfit_items = max(list_Levenshtein_metrics)
-            most_similar_item = list_training_items[list_Levenshtein_metrics.index(num_overfit_items)]
-            print(most_similar_item)
-            num_overfit_sentences = max(list_Levenshtein_metrics_sentences)
+            try:
+                most_similar_item = list_training_items[list_Levenshtein_metrics.index(num_overfit_items)]
+                print("MOST SIMILAR ITEM ", most_similar_item)
+                num_overfit_sentences = max(list_Levenshtein_metrics_sentences)
 
-            payload = global_LM_to_check.check_probabilities(most_similar_item, topk=10)
-            real_topK = payload["real_topk"]
-            pred_topk = payload["pred_topk"]
-            prob = [i[1] for i in real_topK]
-            max_prob = [i[0][1] for i in pred_topk]
-            temp_frac = 0
-            list_frac = []
-            for i in range(len(prob)):
-                list_frac.append(prob[i] / max_prob[i])
-            if 0.0 in list_frac:
-                list_frac = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_frac]
-            print(list_frac)
-            # frac_similar_item = 0
-            frac_similar_item = np.percentile(np.array(list_frac), 50, interpolation="linear")
+                payload = global_LM_to_check.check_probabilities(most_similar_item, topk=10)
+                real_topK = payload["real_topk"]
+                pred_topk = payload["pred_topk"]
+                prob = [i[1] for i in real_topK]
+                max_prob = [i[0][1] for i in pred_topk]
+                temp_frac = 0
+                list_frac = []
+                for i in range(len(prob)):
+                    list_frac.append(prob[i] / max_prob[i])
+                if 0.0 in list_frac:
+                    list_frac = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_frac]
+                print(list_frac)
+                # frac_similar_item = 0
+                frac_similar_item = np.percentile(np.array(list_frac), 50, interpolation="linear")
+                print("training frac ", frac_similar_item)
 
-            topk_probabilities = []
-            for place_prob in pred_topk:
-                temp_list = []
-                for prob in place_prob:
-                    temp_list.append(prob[1])
-                topk_probabilities.append(temp_list)
-            list_entropies = []
-            for probabilities in topk_probabilities:
-                temp_entropy = 0
-                prob_sum = sum(probabilities)
-                for prob in probabilities:
-                    temp_entropy = entropy + (prob / prob_sum) * np.log(prob / prob_sum)
-                list_entropies.append(temp_entropy * (-1))
-            if 0.0 in list_entropies:
-                list_entropies = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_entropies]
-            print(list_entropies)
-            # entropy_similar_item = 0
-            entropy_similar_item = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
+                topk_probabilities = []
+                for place_prob in pred_topk:
+                    temp_list = []
+                    for prob in place_prob:
+                        temp_list.append(prob[1])
+                    topk_probabilities.append(temp_list)
+                list_entropies = []
+                for probabilities in topk_probabilities:
+                    temp_entropy = 0
+                    prob_sum = sum(probabilities)
+                    for prob in probabilities:
+                        temp_entropy = entropy + (prob / prob_sum) * np.log(prob / prob_sum)
+                    list_entropies.append(temp_entropy * (-1))
+                if 0.0 in list_entropies:
+                    list_entropies = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_entropies]
+                print(list_entropies)
+                # entropy_similar_item = 0
+                entropy_similar_item = np.percentile(np.array(list_entropies), 50, interpolation="linear")
+                print("training entropy ", entropy_similar_item)
+            except:
+                frac_similar_item = 0
+                entropy_similar_item = 0
 
             tuple_frac = (frac, frac_similar_item)
             tuple_entropy = (entropy, entropy_similar_item)
