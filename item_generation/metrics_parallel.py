@@ -42,7 +42,6 @@ def overfit_iteration_library(preprocessed_tuple):
     frac = 0
     list_frac = []
     for i in range(len(prob)):
-        frac = frac + prob[i] / max_prob[i]
         list_frac.append(prob[i] / max_prob[i])
     # print(list_frac)
     if 0.0 in list_frac:
@@ -146,6 +145,7 @@ def overfit_iteration_library(preprocessed_tuple):
 
             num_overfit_items = max(list_Levenshtein_metrics)
             most_similar_item = list_training_items[list_Levenshtein_metrics.index(num_overfit_items)]
+            print(most_similar_item)
             num_overfit_sentences = max(list_Levenshtein_metrics_sentences)
 
             payload = global_LM_to_check.check_probabilities(most_similar_item, topk=10)
@@ -156,10 +156,9 @@ def overfit_iteration_library(preprocessed_tuple):
             temp_frac = 0
             list_frac = []
             for i in range(len(prob)):
-                temp_frac = temp_frac + prob[i] / max_prob[i]
                 list_frac.append(prob[i] / max_prob[i])
             if 0.0 in list_frac:
-                list_frac = [0.00000000000001 if (x == 0.0 or x == None) else x for x in list_frac]
+                list_frac = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_frac]
             print(list_frac)
             # frac_similar_item = 0
             frac_similar_item = np.percentile(np.array(list_frac), 50, interpolation="linear")
@@ -178,7 +177,7 @@ def overfit_iteration_library(preprocessed_tuple):
                     temp_entropy = entropy + (prob / prob_sum) * np.log(prob / prob_sum)
                 list_entropies.append(temp_entropy * (-1))
             if 0.0 in list_entropies:
-                list_entropies = [0.00000000000001 if (x == 0.0 or x == None) else x for x in list_entropies]
+                list_entropies = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_entropies]
             print(list_entropies)
             # entropy_similar_item = 0
             entropy_similar_item = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
