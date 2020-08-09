@@ -34,7 +34,7 @@ def overfit_iteration_library(preprocessed_tuple):
     num_library_items = 0.0
     num_classification_num_overfit_F_score = 0.0
 
-    print(preprocessed_tuple[0][0])
+    # print(preprocessed_tuple[0][0])
     payload = global_LM_to_check.check_probabilities(preprocessed_tuple[0][0], topk=10)
     real_topK = payload["real_topk"]
     pred_topk = payload["pred_topk"]
@@ -351,7 +351,7 @@ def overfit_count(list_decoded_outputs, train_data, list_training_items, library
     global_list_library_items = list_library_items
     global_library = library
 
-    print(global_train_data)
+    # print(global_train_data)
 
     if library is not None:
 
