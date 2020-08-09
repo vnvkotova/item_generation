@@ -50,13 +50,13 @@ def overfit_iteration_library(preprocessed_tuple):
     # print(list_frac)
     # if 0.0 in list_frac:
     #     list_frac = [0.00000000000001 if (x == 0.0 or x == nan) else x for x in list_frac]
-    print(list_frac)
+    # print(list_frac)
     # frac = 0
     if len(list_frac) != 0:
         frac = np.percentile(np.array(list_frac), 50, interpolation="linear")
     else:
         frac = 0.0
-    print("generated frac ", frac)
+    # print("generated frac ", frac)
 
     topk_probabilities = []
     for place_prob in pred_topk:
@@ -77,13 +77,13 @@ def overfit_iteration_library(preprocessed_tuple):
     # print(list_entropies)
     # if 0.0 in list_entropies:
     #     list_entropies = [0.00000000000001 if (x == 0.0 or x == None) else x for x in list_entropies]
-    print(list_entropies)
+    # print(list_entropies)
     # entropy = 0
     if len(list_entropies) != 0:
         entropy = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
     else:
         entropy = 0
-    print("generated entropy ", entropy)
+    # print("generated entropy ", entropy)
 
     bool_rubbish = False
     if "@" not in preprocessed_tuple[0][1]:
@@ -161,7 +161,7 @@ def overfit_iteration_library(preprocessed_tuple):
             num_overfit_items = max(list_Levenshtein_metrics)
             try:
                 most_similar_item = list_training_items[list_Levenshtein_metrics.index(num_overfit_items)]
-                print("MOST SIMILAR ITEM ", most_similar_item)
+                # print("MOST SIMILAR ITEM ", most_similar_item)
                 num_overfit_sentences = max(list_Levenshtein_metrics_sentences)
 
                 payload = global_LM_to_check.check_probabilities(most_similar_item, topk=10)
@@ -178,10 +178,10 @@ def overfit_iteration_library(preprocessed_tuple):
                         list_frac.append(0.00000000000001)
                 # if 0.0 in list_frac:
                 #     list_frac = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_frac]
-                print(list_frac)
+                # print(list_frac)
                 # frac_similar_item = 0
                 frac_similar_item = np.percentile(np.array(list_frac), 50, interpolation="linear")
-                print("training frac ", frac_similar_item)
+                # print("training frac ", frac_similar_item)
 
                 topk_probabilities = []
                 for place_prob in pred_topk:
@@ -194,17 +194,17 @@ def overfit_iteration_library(preprocessed_tuple):
                     temp_entropy = 0
                     prob_sum = sum(probabilities)
                     for prob in probabilities:
-                        temp_entropy = entropy + (prob / prob_sum) * np.log(prob / prob_sum)
+                        temp_entropy = temp_entropy + (prob / prob_sum) * np.log(prob / prob_sum)
                     if (not np.isnan(temp_entropy)) and (temp_entropy != 0):
                         list_entropies.append(temp_entropy * (-1))
                     else:
                         list_entropies.append(0.00000000000001)
                 # if 0.0 in list_entropies:
                 #     list_entropies = [0.00000000000001 if (x == 0.0 or x is None) else x for x in list_entropies]
-                print(list_entropies)
+                # print(list_entropies)
                 # entropy_similar_item = 0
                 entropy_similar_item = np.percentile(np.array(list_entropies), 50, interpolation="linear")
-                print("training entropy ", entropy_similar_item)
+                # print("training entropy ", entropy_similar_item)
             except:
                 frac_similar_item = 0
                 entropy_similar_item = 0
