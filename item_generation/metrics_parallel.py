@@ -17,7 +17,7 @@ global_LM_to_check = LM()
 def overfit_iteration_library(preprocessed_tuple):
 
     list_rubbish = ["\n", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#_", "##",
-                    "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#"]
+                    "0#", "1#", "2#", "3#", "4#", "5#", "6#", "7#", "8#", "9#", "•"]
 
     global global_list_training_items
     global global_train_data
@@ -56,7 +56,7 @@ def overfit_iteration_library(preprocessed_tuple):
         frac = np.percentile(np.array(list_frac), 50, interpolation="linear")
     else:
         frac = 0.0
-    print("generated frac ", frac)
+    # print("generated frac ", frac)
 
     topk_probabilities = []
     for place_prob in pred_topk:
@@ -83,7 +83,7 @@ def overfit_iteration_library(preprocessed_tuple):
         entropy = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
     else:
         entropy = 0
-    print("generated entropy ", entropy)
+    # print("generated entropy ", entropy)
 
     bool_rubbish = False
     if "@" not in preprocessed_tuple[0][1]:
