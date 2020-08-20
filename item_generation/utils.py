@@ -327,15 +327,16 @@ def preprocess_generated_items_tuples(list_generated_items):
     temp_list_items = []
 
     for item in list_generated_items:
-        item = re.sub('\<\|startoftext\|\>#', '', item)
-        item = re.sub('\<\|endoftext\|\>', '', item)
-        if item.find("@") != -1:
-            list_splited_str = item.split("@")
-            list_tuples.append(((list_splited_str[1][:-1], item),list_splited_str[0].split("#")[1:]))
-            temp_list_items.append(list_splited_str[1][:-1])
-        else:
-            list_tuples.append(((item, item), [""]))
-            temp_list_items.append(item)
+        if "•" not in item:
+            item = re.sub('\<\|startoftext\|\>#', '', item)
+            item = re.sub('\<\|endoftext\|\>', '', item)
+            if item.find("@") != -1:
+                list_splited_str = item.split("@")
+                list_tuples.append(((list_splited_str[1][:-1], item),list_splited_str[0].split("#")[1:]))
+                temp_list_items.append(list_splited_str[1][:-1])
+            else:
+                list_tuples.append(((item, item), [""]))
+                temp_list_items.append(item)
 
     overfit_repeated_items = len(temp_list_items) - len(set(temp_list_items))
 
