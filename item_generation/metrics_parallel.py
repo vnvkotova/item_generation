@@ -56,7 +56,7 @@ def overfit_iteration_library(preprocessed_tuple):
         frac = np.percentile(np.array(list_frac), 50, interpolation="linear")
     else:
         frac = 0.0
-    # print("generated frac ", frac)
+    print("generated frac ", frac)
 
     topk_probabilities = []
     for place_prob in pred_topk:
@@ -83,7 +83,7 @@ def overfit_iteration_library(preprocessed_tuple):
         entropy = np.percentile(np.array(list_entropies), 50, interpolation = "linear")
     else:
         entropy = 0
-    # print("generated entropy ", entropy)
+    print("generated entropy ", entropy)
 
     bool_rubbish = False
     if "@" not in preprocessed_tuple[0][1]:
