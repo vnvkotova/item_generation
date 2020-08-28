@@ -498,7 +498,11 @@ class ExtendedTrainer(Trainer):
             list_training_data = []
             for item_interval in list_items_intervals:
                 item_id = random.randint(item_interval[0], item_interval[1])
-                list_training_data.append(train_data.find_one({"_id": item_id})["training_data"])
+                if train_data.find_one({"_id": item_id}) is not None:
+                    list_training_data.append(train_data.find_one({"_id": item_id})["training_data"])
+                else:
+                    print("Here is the nonexisting item id: ", item_id)
+                # list_training_data.append(train_data.find_one({"_id": item_id})["training_data"])
             f = open(data_args.train_data_file, 'w')
             for item in list_training_data:
                 f.write(item + '\n')
