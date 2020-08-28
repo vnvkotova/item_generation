@@ -176,6 +176,11 @@ class ExtendedTrainer(Trainer):
         self.train_dataset = get_dataset(data_args, tokenizer=tokenizer, local_rank=training_args.local_rank)
         train_dataloader = self.get_train_dataloader()
 
+        # Todo added the prints!
+        logger.info("     The number of intervals: %d", len(list_items_intervals))
+        logger.info("     The length of the training data: %d", len(list_training_data))
+        logger.info("     The length of the dataloader: %d", len(train_dataloader))
+
         if self.args.max_steps > 0:
             t_total = self.args.max_steps
             num_train_epochs = (
@@ -389,7 +394,7 @@ class ExtendedTrainer(Trainer):
                 decoded_outputs.append(temp_sentence)
             model.train()
 
-            logger.info("------------------------------------------ Metrics ------------------------------------------")
+            # logger.info("------------------------------------------ Metrics ------------------------------------------")
 
             dict_metrics_epoch = overfit_count(decoded_outputs, train_data, list_training_items, data_base, list_library_items)
 
@@ -510,6 +515,12 @@ class ExtendedTrainer(Trainer):
 
             self.train_dataset = get_dataset(data_args, tokenizer=tokenizer, local_rank=training_args.local_rank)
             train_dataloader = self.get_train_dataloader()
+
+            # Todo added the prints!
+            logger.info("     That's inside the train function")
+            logger.info("     The number of intervals: %d", len(list_items_intervals))
+            logger.info("     The length of the training data: %d", len(list_training_data))
+            logger.info("     The length of the dataloader: %d", len(train_dataloader))
 
         if self.tb_writer:
             self.tb_writer.close()
