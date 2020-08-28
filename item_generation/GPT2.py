@@ -272,6 +272,12 @@ class ExtendedTrainer(Trainer):
         metric_classification_overfit_sentences = []
         metric_classification_labels = []
         metric_classification_F_score = []
+
+        generated_frac = []
+        training_frac = []
+        generated_entropy = []
+        training_entropy = []
+
         current_epoch = 0
 
         metric_library_items = []
@@ -393,10 +399,30 @@ class ExtendedTrainer(Trainer):
             metric_classification_labels.append(dict_metrics_epoch["classification_labels"])
             metric_classification_F_score.append(dict_metrics_epoch["classification_F_score"])
 
+            generated_frac.append(dict_metrics_epoch["generated_frac"])
+            training_frac.append(dict_metrics_epoch["training_frac"])
+            generated_entropy.append(dict_metrics_epoch["generated_entropy"])
+            training_entropy.append(dict_metrics_epoch["training_entropy"])
+            sentences = dict_metrics_epoch["classified_sentences"]
+
+            logger.info("----------------------------------------- Sentences -----------------------------------------")
+            logger.info("---------------------------------------- Unique items ---------------------------------------")
+            for sentence in sentences[0]:
+                logger.info(sentence)
+
+            logger.info("--------------------------------------- Training items --------------------------------------")
+            for sentence in sentences[1]:
+                logger.info(sentence)
+
             fig = plt.figure()
             fig.set_size_inches(12, 12)
 
             if data_base is not None:
+
+                logger.info(
+                    "--------------------------------------- Library items ---------------------------------------")
+                for sentence in sentences[2]:
+                    logger.info(sentence)
 
                 metric_library_items.append(dict_metrics_epoch["library_items"])
                 metric_classification_library_F_score.append(dict_metrics_epoch["classification_library_F_score"])
@@ -424,9 +450,14 @@ class ExtendedTrainer(Trainer):
                 ax3.plot(metric_classification_library_F_score)
                 ax3.legend(["Library items", "F score"])
             else:
-                ax0 = plt.subplot2grid((2, 2), (0, 0), rowspan=1, colspan=2, title="Loss function")
-                ax1 = plt.subplot2grid((2, 2), (1, 0), rowspan=1, colspan=1, title="Overfit metrics")
-                ax2 = plt.subplot2grid((2, 2), (1, 1), rowspan=1, colspan=1, title="Classification metrics")
+
+                logger.info(
+                    "------------------------------------------ Metrics ------------------------------------------")
+
+                ax0 = plt.subplot2grid((3, 2), (0, 0), rowspan=1, colspan=2, title="Loss function")
+                ax1 = plt.subplot2grid((3, 2), (1, 0), rowspan=1, colspan=1, title="Overfit metrics")
+                ax2 = plt.subplot2grid((3, 2), (1, 1), rowspan=1, colspan=1, title="Classification metrics")
+                ax3 = plt.subplot2grid((3, 2), (2, 0), rowspan=1, colspan=2, title="LM distribution metrics")
 
                 ax0.plot(list_losses)
 
@@ -441,6 +472,13 @@ class ExtendedTrainer(Trainer):
                 ax2.plot(metric_classification_labels)
                 ax2.plot(metric_classification_F_score)
                 ax2.legend(["Overfited items", "Overfited sentences", "Overfited labels", "F score"])
+
+                ax3.plot(generated_frac)
+                ax3.plot(training_frac)
+                ax3.plot(generated_entropy)
+                ax3.plot(training_entropy)
+                ax3.legend(["Probability of generated items", "Probability of similar items",
+                            "Entropy of generated items", "Entropy of similar items"])
 
             plt.tight_layout()
             plt_name = self.args.output_dir + "/model_preformace.png"
