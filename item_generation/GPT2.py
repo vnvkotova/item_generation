@@ -133,7 +133,7 @@ class ExtendedTrainer(Trainer):
     # epoch: Optional[float] = None
 
     def train_augmentation(self, tokenizer, train_data, data_base, num_val_items, val_top_k, val_top_p, data_args,
-                           training_args, model_path: Optional[str] = None):
+                           training_args, list_items_intervals, model_path: Optional[str] = None):
         """
         Main training entry point.
         Args:
@@ -149,36 +149,37 @@ class ExtendedTrainer(Trainer):
             logger.warning("Sorry, not all functionality is available if training data and the database itself are"
                            "not in mongoDB.")
 
-        current_item = train_data.find_one({"_id": 0})["initial_item"]
-        list_items_intervals = []
-        item_start = 0
-        current_index = 0
-        for item in train_data.find():
-            if item["initial_item"] != current_item:
-                list_items_intervals.append((item_start, current_index - 1))
-                current_item = item["initial_item"]
-                item_start = current_index
-            current_index = current_index + 1
-        list_items_intervals.append((item_start, current_index))
-
-        list_training_data = []
-        for item_interval in list_items_intervals:
-            item_id = random.randint(item_interval[0], item_interval[1])
-            if train_data.find_one({"_id": item_id}) is not None:
-                list_training_data.append(train_data.find_one({"_id": item_id})["training_data"])
-            else:
-                print("Here is the nonexisting item id: ", item_id)
-        f = open(data_args.train_data_file, 'w')
-        for item in list_training_data:
-            f.write(item + '\n')
-        f.close()
+        # Todo
+        # current_item = train_data.find_one({"_id": 0})["initial_item"]
+        # list_items_intervals = []
+        # item_start = 0
+        # current_index = 0
+        # for item in train_data.find():
+        #     if item["initial_item"] != current_item:
+        #         list_items_intervals.append((item_start, current_index - 1))
+        #         current_item = item["initial_item"]
+        #         item_start = current_index
+        #     current_index = current_index + 1
+        # list_items_intervals.append((item_start, current_index))
+        #
+        # list_training_data = []
+        # for item_interval in list_items_intervals:
+        #     item_id = random.randint(item_interval[0], item_interval[1])
+        #     if train_data.find_one({"_id": item_id}) is not None:
+        #         list_training_data.append(train_data.find_one({"_id": item_id})["training_data"])
+        #     else:
+        #         print("Here is the nonexisting item id: ", item_id)
+        # f = open(data_args.train_data_file, 'w')
+        # for item in list_training_data:
+        #     f.write(item + '\n')
+        # f.close()
 
         self.train_dataset = get_dataset(data_args, tokenizer=tokenizer, local_rank=training_args.local_rank)
         train_dataloader = self.get_train_dataloader()
 
         # Todo added the prints!
         logger.info("     The number of intervals: %d", len(list_items_intervals))
-        logger.info("     The length of the training data: %d", len(list_training_data))
+        # logger.info("     The length of the training data: %d", len(list_training_data))
         logger.info("     The length of the dataloader: %d", len(train_dataloader))
         logger.info("     self.num_examples(train_dataloader)): %d", self.num_examples(train_dataloader))
 
@@ -189,6 +190,9 @@ class ExtendedTrainer(Trainer):
             )
             logger.info("     I choose a way 1")
         else:
+            logger.info("     Length of the dataloader in option 2: %d", len(train_dataloader))
+            logger.info("     Number of gradient_accumulation_steps; %d", self.args.gradient_accumulation_steps)
+            logger.info("     Number of num_train_epochs: %d", self.args.num_train_epochs)
             t_total = int(len(train_dataloader) // self.args.gradient_accumulation_steps * self.args.num_train_epochs)
             num_train_epochs = self.args.num_train_epochs
             logger.info("     I choose a way 2")
@@ -994,13 +998,38 @@ def train_GPT2(model_name_or_path, train_data, data_base, output_dir, augmentati
     if type(train_data) == str:
         train_data_file = train_data
     else:
-        train_data_file = output_dir + "GPT2_train_data.txt"
-        df_mongoDB_train = pd.DataFrame(list(train_data.find()))
-        list_mongoDB_train = df_mongoDB_train["training_data"].tolist()
-        f = open(train_data_file, 'w')
-        for item in list_mongoDB_train:
-            f.write(item + '\n')
-        f.close()
+        if not augmentation:
+            train_data_file = output_dir + "GPT2_train_data.txt"
+            df_mongoDB_train = pd.DataFrame(list(train_data.find()))
+            list_mongoDB_train = df_mongoDB_train["training_data"].tolist()
+            f = open(train_data_file, 'w')
+            for item in list_mongoDB_train:
+                f.write(item + '\n')
+            f.close()
+        else:
+            current_item = train_data.find_one({"_id": 0})["initial_item"]
+            list_items_intervals = []
+            item_start = 0
+            current_index = 0
+            for item in train_data.find():
+                if item["initial_item"] != current_item:
+                    list_items_intervals.append((item_start, current_index - 1))
+                    current_item = item["initial_item"]
+                    item_start = current_index
+                current_index = current_index + 1
+            list_items_intervals.append((item_start, current_index))
+
+            list_training_data = []
+            for item_interval in list_items_intervals:
+                item_id = random.randint(item_interval[0], item_interval[1])
+                if train_data.find_one({"_id": item_id}) is not None:
+                    list_training_data.append(train_data.find_one({"_id": item_id})["training_data"])
+                else:
+                    print("Here is the nonexisting item id: ", item_id)
+            f = open(train_data_file, 'w')
+            for item in list_training_data:
+                f.write(item + '\n')
+            f.close()
 
     logging.info('Passing the following training file to the trainer: %s', train_data_file)
 
@@ -1083,7 +1112,7 @@ def train_GPT2(model_name_or_path, train_data, data_base, output_dir, augmentati
         # Todo the signature has changed!
         if augmentation:
             trainer.train_augmentation(tokenizer, train_data, data_base, num_val_items, val_top_k, val_top_p,
-                                       data_args, training_args, model_path=model_path)
+                                       data_args, training_args, list_items_intervals, model_path=model_path)
         else:
             trainer.train(tokenizer, train_data, data_base, num_val_items, val_top_k, val_top_p, model_path=model_path)
         trainer.save_model()
