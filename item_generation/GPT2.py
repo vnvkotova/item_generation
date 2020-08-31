@@ -180,15 +180,21 @@ class ExtendedTrainer(Trainer):
         logger.info("     The number of intervals: %d", len(list_items_intervals))
         logger.info("     The length of the training data: %d", len(list_training_data))
         logger.info("     The length of the dataloader: %d", len(train_dataloader))
+        logger.info("     self.num_examples(train_dataloader)): %d", self.num_examples(train_dataloader))
 
         if self.args.max_steps > 0:
             t_total = self.args.max_steps
             num_train_epochs = (
                 self.args.max_steps // (len(train_dataloader) // self.args.gradient_accumulation_steps) + 1
             )
+            logger.info("     I choose a way 1")
         else:
             t_total = int(len(train_dataloader) // self.args.gradient_accumulation_steps * self.args.num_train_epochs)
             num_train_epochs = self.args.num_train_epochs
+            logger.info("     I choose a way 2")
+            logger.info("     And my t_total is: %d", t_total)
+
+        logger.info("     Expected number of the total optimization steps: %d", len(train_dataloader))
 
         optimizer, scheduler = self.get_optimizers(num_training_steps=t_total)
 
@@ -390,7 +396,7 @@ class ExtendedTrainer(Trainer):
 
             for i, sample_output in enumerate(sample_outputs):
                 temp_sentence = tokenizer.decode(sample_output, skip_special_tokens=True)
-                logger.info(temp_sentence)
+                # logger.info(temp_sentence)
                 decoded_outputs.append(temp_sentence)
             model.train()
 
