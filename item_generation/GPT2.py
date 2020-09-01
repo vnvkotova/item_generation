@@ -149,56 +149,17 @@ class ExtendedTrainer(Trainer):
             logger.warning("Sorry, not all functionality is available if training data and the database itself are"
                            "not in mongoDB.")
 
-        # Todo
-        # current_item = train_data.find_one({"_id": 0})["initial_item"]
-        # list_items_intervals = []
-        # item_start = 0
-        # current_index = 0
-        # for item in train_data.find():
-        #     if item["initial_item"] != current_item:
-        #         list_items_intervals.append((item_start, current_index - 1))
-        #         current_item = item["initial_item"]
-        #         item_start = current_index
-        #     current_index = current_index + 1
-        # list_items_intervals.append((item_start, current_index))
-        #
-        # list_training_data = []
-        # for item_interval in list_items_intervals:
-        #     item_id = random.randint(item_interval[0], item_interval[1])
-        #     if train_data.find_one({"_id": item_id}) is not None:
-        #         list_training_data.append(train_data.find_one({"_id": item_id})["training_data"])
-        #     else:
-        #         print("Here is the nonexisting item id: ", item_id)
-        # f = open(data_args.train_data_file, 'w')
-        # for item in list_training_data:
-        #     f.write(item + '\n')
-        # f.close()
-
         self.train_dataset = get_dataset(data_args, tokenizer=tokenizer, local_rank=training_args.local_rank)
         train_dataloader = self.get_train_dataloader()
-
-        # Todo added the prints!
-        logger.info("     The number of intervals: %d", len(list_items_intervals))
-        # logger.info("     The length of the training data: %d", len(list_training_data))
-        logger.info("     The length of the dataloader: %d", len(train_dataloader))
-        logger.info("     self.num_examples(train_dataloader)): %d", self.num_examples(train_dataloader))
 
         if self.args.max_steps > 0:
             t_total = self.args.max_steps
             num_train_epochs = (
                 self.args.max_steps // (len(train_dataloader) // self.args.gradient_accumulation_steps) + 1
             )
-            logger.info("     I choose a way 1")
         else:
-            logger.info("     Length of the dataloader in option 2: %d", len(train_dataloader))
-            logger.info("     Number of gradient_accumulation_steps; %d", self.args.gradient_accumulation_steps)
-            logger.info("     Number of num_train_epochs: %d", self.args.num_train_epochs)
             t_total = int(len(train_dataloader) // self.args.gradient_accumulation_steps * self.args.num_train_epochs)
             num_train_epochs = self.args.num_train_epochs
-            logger.info("     I choose a way 2")
-            logger.info("     And my t_total is: %d", t_total)
-
-        logger.info("     Expected number of the total optimization steps: %d", len(train_dataloader))
 
         optimizer, scheduler = self.get_optimizers(num_training_steps=t_total)
 
@@ -526,11 +487,29 @@ class ExtendedTrainer(Trainer):
             self.train_dataset = get_dataset(data_args, tokenizer=tokenizer, local_rank=training_args.local_rank)
             train_dataloader = self.get_train_dataloader()
 
-            # Todo added the prints!
-            logger.info("     That's inside the train function")
-            logger.info("     The number of intervals: %d", len(list_items_intervals))
-            logger.info("     The length of the training data: %d", len(list_training_data))
-            logger.info("     The length of the dataloader: %d", len(train_dataloader))
+            if data_base is not None:
+                dict_metrics = {"Losses": list_losses,
+                                "Similar_items": metric_overfit_items, "Similar_sentences": metric_overfit_sentences,
+                                "Overfit_repeated_items": metric_overfit_repeated_items,
+                                "Overfit_repeated_sentences": metric_overfit_repeated_sentences,
+                                "Class_overfited_items": metric_classification_overfit_items,
+                                "Class_overfited_sentences": metric_classification_overfit_sentences,
+                                "Class_overfited_labels": metric_classification_labels,
+                                "Class_F_score": metric_classification_F_score,
+                                "Library_items": metric_library_items,
+                                "Classification_library_F_score": metric_classification_library_F_score}
+            else:
+                dict_metrics = {"Losses": list_losses,
+                                "Similar_items": metric_overfit_items, "Similar_sentences": metric_overfit_sentences,
+                                "Overfit_repeated_items": metric_overfit_repeated_items,
+                                "Overfit_repeated_sentences": metric_overfit_repeated_sentences,
+                                "Class_overfited_items": metric_classification_overfit_items,
+                                "Class_overfited_sentences": metric_classification_overfit_sentences,
+                                "Class_overfited_labels": metric_classification_labels,
+                                "Class_F_score": metric_classification_F_score}
+            df_metrics = pd.DataFrame(dict_metrics)
+            excel_name = self.args.output_dir + "/metrics.xlsx"
+            df_metrics.to_excel(excel_name)
 
         if self.tb_writer:
             self.tb_writer.close()
