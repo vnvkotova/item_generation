@@ -735,6 +735,7 @@ class ExtendedTrainer(Trainer):
 
                             self.save_model(output_dir)
                             self._rotate_checkpoints()
+                            tokenizer.save_pretrained(output_dir)
                             torch.save(optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
                             torch.save(scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
                             logger.info("Saving optimizer and scheduler states to %s", output_dir)
