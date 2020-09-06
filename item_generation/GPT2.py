@@ -333,6 +333,7 @@ class ExtendedTrainer(Trainer):
                             torch.save(optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
                             torch.save(scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
                             logger.info("Saving optimizer and scheduler states to %s", output_dir)
+                            tokenizer.save_pretrained(training_args.output_dir)
 
                 if 0 < self.args.max_steps < self.global_step:
                     epoch_iterator.close()
@@ -739,6 +740,7 @@ class ExtendedTrainer(Trainer):
                             torch.save(optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
                             torch.save(scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
                             logger.info("Saving optimizer and scheduler states to %s", output_dir)
+                            tokenizer.save_pretrained(training_args.output_dir)
 
                 if 0 < self.args.max_steps < self.global_step:
                     epoch_iterator.close()
