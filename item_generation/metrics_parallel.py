@@ -269,6 +269,8 @@ def overfit_iteration(preprocessed_tuple):
     else:
         entropy = 0
 
+    print(preprocessed_tuple[0][1])
+
     bool_rubbish = False
     if "@" not in preprocessed_tuple[0][1]:
         bool_rubbish = True
