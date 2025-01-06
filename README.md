@@ -56,7 +56,7 @@ In [[8]](#8) Gehrmann et al. propose to utilize statistical properties to analyz
 * Average entropy of training items — evaluates the positional entropy distribution of training items and is computed likewise entropy of generated items.
 
 ## Implementation 
-The proposed system called item generation is built based on Transformers 3.0.2 python package [[11]](#11). All additional tensor computations and neural network manipulations were performed with PyTorch 1.6.0 [[12]](#12). The simplified architecture for item generation package is presented bellow:
+The proposed system called item generation is built based on Transformers 3.0.2 python package [[11]](#11). All additional tensor computations and neural network manipulations were performed with PyTorch 1.6.0 [[12]](#12). The simplified architecture for item generation package is presented bellow: <br/>
 ![Architecture](https://github.com/user-attachments/assets/89e5f45e-a2ea-4504-9823-2c45d643a444)
 
 
